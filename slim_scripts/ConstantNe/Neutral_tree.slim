@@ -1,0 +1,68 @@
+initialize() {
+	initializeTreeSeq();
+	if (exists("slimgui")) {
+		defineConstant("R", 5e-9); //1e-7
+		defineConstant("MU", 1e-9); //1e-7
+		defineConstant("N", 1e6); //5e-4
+		defineConstant("Q", 100); //rescaling constant
+		defineConstant("sd", 0);
+		defineConstant("sb", 0.03);
+		defineConstant("run", 1);
+		//defineConstant("ChrType",'X');
+		defineConstant("THETA_A", 0.5);
+		defineConstant("PF", 1.0);
+		defineConstant("AgeSweep", 0.0);
+		defineConstant("burn_in", 0.5);
+		defineConstant("sexRatio", 0.5);
+		defineConstant("H", 0.5);
+		defineConstant("file_path","tmp/out_X.txt");
+	
+	
+	}
+	defineConstant("H", 0.5);
+	defineConstant("sb", 0);
+	defineConstant("file_path","tmp_intermediate_files/ConstantNe_Neutral_"+asString(run)+".trees");
+	defineConstant("simID", getSeed());
+	defineConstant("Mu_a", 0);
+	defineConstant("chromosome_length", asInteger(4.5e5)); //1e5
+	defineConstant("k",1);
+	
+
+	initializeMutationType("m2", H, "f", sb);
+	m2.mutationStackPolicy = "f";// ??
+	
+	
+	initializeGenomicElementType("g2", m2,1);
+	initializeGenomicElement(g2, 0, chromosome_length-1);
+	
+	initializeMutationRate(0);
+	
+	initializeRecombinationRate(R*Q);
+
+}
+
+function (void)EndSimulation(void){
+	print("--end of simulation--");
+	sim.treeSeqOutput(file_path);
+	
+	sim.simulationFinished();
+}
+
+1 early() {
+	
+	sim.addSubpop("p1", asInteger(N/Q));
+	
+	sim.tag=0;
+	
+	
+	G_end = 50;
+	print(G_end);
+	
+	//get simulation output
+	community.registerLateEvent(NULL, "{EndSimulation();}", G_end, G_end);
+	
+
+
+
+}
+

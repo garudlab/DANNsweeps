@@ -1,0 +1,139 @@
+initialize() {
+	initializeTreeSeq();
+	if (exists("slimgui")) {
+		defineConstant("R", 1.25e-8); //1e-7
+		defineConstant("MU", 1e-8); //1e-7
+		defineConstant("N", 1e4); //5e-4
+		defineConstant("Q", 1); //rescaling constant
+		defineConstant("sd", 0);
+		defineConstant("sb", 0.03);
+		defineConstant("run", 1);
+		defineConstant("THETA_A", 5);
+		defineConstant("PF", 0.75);
+		defineConstant("AgeSweep", 0.0);
+		defineConstant("burn_in", 0.1);
+		defineConstant("sexRatio", 0.5);
+		defineConstant("H", 0.5);
+		defineConstant("file_path","tmp/out_X.txt");
+	
+	
+	}
+	defineConstant("file_path","tmp_intermediate_files/ConstantNe_HS_"+asString(run)+".trees");
+	defineConstant("simID", getSeed());
+	defineConstant("Mu_a", THETA_A/(4*(N)));
+	defineConstant("chromosome_length", asInteger(4.5e5)); //1e5
+	defineConstant("k",1);
+	
+	initializeMutationType("m1", 0.5, "f", 0);
+	initializeMutationType("m2", 0.5, "f", sb);
+	m2.mutationStackPolicy = "f";// ??
+	
+	initializeGenomicElementType("g1", m1, 1);
+	initializeGenomicElementType("g2", m2,1);
+	initializeGenomicElement(g1, 0, asInteger(chromosome_length/2)-2);
+	initializeGenomicElement(g2, asInteger(chromosome_length/2-1), asInteger(chromosome_length/2));
+	initializeGenomicElement(g1, asInteger(chromosome_length/2)+1, chromosome_length-1);
+	initializeMutationRate(c(0,Mu_a*Q,0), c(asInteger(chromosome_length/2)-2,asInteger(chromosome_length/2)-1, asInteger(chromosome_length)-1));
+	
+	initializeRecombinationRate(R*Q);
+
+}
+function (void)selecOn(void){
+	print("selection on");
+	// save the state of the simulation
+	sim.treeSeqOutput("/tmp/slim_" + simID + ".trees");
+	sim.tag =1; //seleciton is on
+}
+
+function (void)checkSweep(void) {
+	counts = p1.genomes.individual.countOfMutationsOfType(m2);
+	freq = mean(counts > 0);
+	subs=sum(sim.substitutions.mutationType == m2);
+	if (freq >= PF)
+	{
+		
+		//p_sample=p1.sampleIndividuals(100);
+		muts=p1.genomes.mutationsOfType(m2);
+		muts = unique(muts).size();
+		line = asString(muts) +  "\t" + asString(sim.cycle)+"\t" + "\t"+asString(freq)
+			+  "\t" +asString(THETA_A);
+		
+		catn(line);
+		
+		if (muts >1)
+		{
+			print("REACHED PF AND AGE -- outputting tree");
+			sim.treeSeqOutput(file_path);
+			sim.simulationFinished();
+		}
+		else
+		{
+			print("HARD SWEEP - RESTARTING");
+			sim.readFromPopulationFile("/tmp/slim_" + simID + ".trees");
+			// start a newly seeded run
+			setSeed(rdunif(1, 0, asInteger(2^62) - 1));
+			sim.tag =1; //seleciton is on
+		}
+	
+	}
+
+}
+function (void)EndSimulation(void){
+	print("RECHED END OF SIMULATION");
+	counts = p1.genomes.individual.countOfMutationsOfType(m2);
+	freq = mean(counts > 0);
+	subs=sum(sim.substitutions.mutationType == m2);
+	if (freq >= 0.5 & PF<=0.95){// if within PF range output else restart
+		p_sample=p1.sampleIndividuals(100);
+		muts=p_sample.genomes.mutationsOfType(m2);
+		muts = unique(muts).size();
+		if (muts >1)
+		{
+			print("REACHED END -- outputting tree");
+			sim.treeSeqOutput(file_path);
+			sim.simulationFinished();
+		}
+		else
+		{
+			print("HARD SWEEP - RESTARTING");
+			sim.readFromPopulationFile("/tmp/slim_" + simID + ".trees");
+			// start a newly seeded run
+			setSeed(rdunif(1, 0, asInteger(2^62) - 1));
+			sim.tag =1; //seleciton is on
+		
+		}
+	
+	}
+	else  {
+		print("SIMULATION END REACHED -- RSTARTING");
+		sim.readFromPopulationFile("/tmp/slim_" + simID + ".trees");
+		// start a newly seeded run
+		setSeed(rdunif(1, 0, asInteger(2^62) - 1));
+		sim.tag =1; //seleciton is on
+	}
+}
+
+mutation(m2) {
+	return ifelse(sim.tag==1,  T, F);}
+
+1 early() {
+	
+	sim.addSubpop("p1", asInteger(N/Q));
+	
+	sim.tag=0;
+	
+	catn("mutation rate= "+asString(Mu_a));
+	catn("s= "+asString(sb));
+	
+	defineConstant("G_start", 100);
+	print(G_start);
+	
+	G_end = 2*asInteger(N/Q)*100;
+	print(G_end);
+	
+	community.registerLateEvent(NULL, "{selecOn();}", G_start, G_start);
+	community.registerLateEvent(NULL, "{checkSweep();}", G_start+2, G_end);
+	community.registerLateEvent(NULL, "{EndSimulation();}", G_end, G_end);
+
+}
+
