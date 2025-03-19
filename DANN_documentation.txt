@@ -55,3 +55,119 @@ for chr in {1..21..2};do
 done
 
 cat chr*H* > scanOdd_H_j10_epoch9_rec.txt
+
+
+
+
+
+########################################################################################################################
+############### scan processing ########################################################################################
+########################################################################################################################
+
+for chr in {1..22};do
+    python ../addRecomb.py -i chr${chr}_H_predCNN_j10_05.txt -o chr${chr}_H_predCNN_j10_05_rec.txt -g "/u/project/ngarud/Garud_lab/aDNA/RecombMaps/DeCodeSexAveraged_GRCh37/genetic_map_decode_sex-averaged_chr${chr}.txt"
+
+    #rm chr${chr}_H_pred_j10_08.txt
+done
+
+
+#add constant chrom number to file
+
+for chr in {1..22};do
+    awk -v num="$chr" '{print $0 "\t" num}' chr${chr}_H_predCNN_j10_05_rec.txt > chr${chr}_H_predCNN_j10_05_rec_tmp.txt
+    mv chr${chr}_H_predCNN_j10_05_rec_tmp.txt chr${chr}_H_predCNN_j10_05_rec.txt
+done
+
+cat chr*H*_rec.txt > scanCNN_RowDist_H_j10_05_rec.txt
+
+
+
+
+##### GET TOP PEAKS VCF AND ANNOTION
+
+# get full vcf
+plink --bfile v51.0.H --recode vcf --out VCFfiles/v51.0.H
+
+#sort 
+bcftools query -f '%CHROM\t%POS\t%POS\t%ID\n' v51.0.H.vcf >  v51.0.H.bed
+mv peaks_H_RowDist.txt peaks_H_RowDist.bed
+
+# filter common chromosomes
+awk '{print $1}' peaks_H_RowDist.bed | sort -u > query_chroms.txt
+awk '{print $1}' v51.0.H.bed | sort -u > db_chroms.txt
+comm -12 query_chroms.txt db_chroms.txt > common_chroms.txt
+
+#  filter BED files:
+grep -wFf common_chroms.txt peaks_H_RowDist.bed > filtered_query.bed
+grep -wFf common_chroms.txt v51.0.H.bed > filtered_db.bed
+
+mv filtered_query.bed peaks_H_RowDist.bed
+mv filtered_db.bed v51.0.H.bed
+
+bedtools closest -a peaks_H_RowDist.bed -b v51.0.H.bed -d > topPeaks_v51.0.H.bed
+
+#get positons to filter VCF
+cut -f4,5 topPeaks_v51.0.H.bed > filter_positions.txt
+
+#get subset VCF
+bgzip v51.0.H.vcf
+bcftools index v51.0.H.vcf.gz
+
+bcftools view -R filter_positions.txt v51.0.H.vcf.gz -Oz -o topPeaks_v51.0.H.vcf.gz
+
+
+
+#### Find closest genes
+#I used VEP to get genses in 256000 windows upstream and downstream of variant
+
+grep "protein_coding" VEP_Hpeaks.txt > VEP_Hpeaks_proteinCoding.txt
+
+
+
+##using bedtools only
+wget "https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_42/GRCh37_mapping/gencode.v42lift37.annotation.gtf.gz"
+zgrep 'gene_type "protein_coding"' gencode.v42lift37.annotation.gtf > protein_coding.gtf
+
+module load bedops
+
+awk '{ if ($0 ~ "transcript_id") print $0; else print $0" transcript_id \"\";"; }' protein_coding.gtf | gtf2bed - > protein_coding.bed
+
+#sort files
+#bedtools sort -i peaks_H_RowDist.bed > sorted_peaks_H_RowDist.bed
+bedtools sort -i protein_coding.bed > genes_sorted.bed
+
+sed -i 's/chr//g' genes_sorted.bed 
+
+grep "protein_coding" genes_sorted.bed > genes_sorted_proteinCoding.bed
+
+bedtools closest -a peaks_H_RowDist.bed -b genes_sorted_proteinCoding.bed -D a -t first > closest_genes.tsv
+
+
+bedtools closest -a peaks_H_RowDist.bed -b genes_sorted_proteinCoding.bed -D a -t first \
+  | awk 'BEGIN {OFS="\t"} {print $1,$2,$3,$4,$18,$NF}' > closest_genes.tsv
+
+
+###### Visualize peaks
+
+module load htslib
+module load bcftools
+
+
+#21592609-22105845
+#72584990-73282330
+#109284096-109624296
+#135756777-136631071 #LCT
+#152521376-152940018
+#167860886-168320237
+#178235617-178600535
+#197233200-197723715
+
+#Neutral
+#29970016-30630912
+
+bgzip -c VCF.v51.0.H.chr2.vcf > VCF.v51.0.H.chr2.vcf.gz
+tabix -p vcf VCF.v51.0.H.chr2.vcf.gz
+bcftools view -r 2:29970016-30630912 VCF.v51.0.H.chr2.vcf.gz -o chr2.peakH12.vcf
+
+qsub qsub_DataForViz #edit file path accordingly
+
