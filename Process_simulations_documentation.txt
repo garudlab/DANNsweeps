@@ -1,0 +1,109 @@
+#######################################################
+################ simulation processing ################
+#######################################################
+
+1) Add missing data to simulations
+   
+   #go to aDNA_processData/ directory
+
+   # set correct __path__  and __new_filename__ directory in qsub_Process_aDNA script and then run script
+
+   qsub qsub_Process_aDNA
+
+   # do this for all the simulations you want to process (hard, soft neutral, different demographies etc.)
+
+
+1.5) Make sure you have correct number of segsites:
+
+for file in *; do
+    sed -i 's/segsites: [0-9]\+/segsites: 201/g' "$file"
+done
+
+#remove empty lines
+for file in *; do
+    sed -i '/^$/d' "$file"
+done
+
+
+
+2) Rename each file in format Model_THETA_target.txt
+
+
+for i in {1..50}; do
+    #mv MD_Neutral_Souilmi_Q1_${i}.txt NeutralSouilmiMiss2MD05_THETA0.0_target0_${i}.txt
+    mv  MD_SoftSweep_Souilmi_Q1_${i}.txt  SoftSweepSouilmiMiss2MD05_THETA5.0_target0_${i}.txt
+    #mv MD_HardSweep_Souilmi_Q1_${i}.txt  HardSweepSouilmiMiss2MD05_THETA0.01_target0_${i}.txt
+    #mv MD_SGV_ConstantNe_Q1_${i}.txt  SGVMD_THETA0.01_target0_${i}.txt
+done
+
+for i in {1..50}; do
+    mv ConstantNeMD43_Neutral_THETA1to5_n150_w201_centerWindowDist_trainsrc_${i}.dat ConstantNeMD43_Neutral_THETA1to5_n150_w201_centerWindowFreq_trainsrc_${i}.dat 
+done
+
+
+#check num of sims per file
+for file in *; do
+    grep "segsites" "$file" | wc -l
+done
+
+
+2.5) (Only run this if I have to merge data from files and re-organize) Merge data
+
+counter=1
+# Loop through files in groups of 5
+for i in $(seq 1 5 100); do
+    # Concatenate 5 files at a time
+    echo $counter
+    cat SoftSweep_1e6_H0.5_THETAvary_Q50_$i.txt SoftSweep_1e6_H0.5_THETAvary_Q50_$((i+1)).txt SoftSweep_1e6_H0.5_THETAvary_Q50_$((i+2)).txt SoftSweep_1e6_H0.5_THETAvary_Q50_$((i+3)).txt SoftSweep_1e6_H0.5_THETAvary_Q50_$((i+4)).txt > SoftSweep_1e6_H0.5_THETAvary_Q50_merged_$counter.txt
+    # Increment the counter
+    ((counter++))
+done
+
+
+3) Once missing data has been added, process simulations and order haplotypes 
+    # make sure your path directory doesn't include directories with _ (underscore) in file name
+    
+
+    # go to directory /DANN/aDNA/ProcessingData
+    # Processed files will be saved in /DANN/aDNA/ProcessingData/ProcessedData -- this directory includes two sub directories: 
+    # /DANN/aDNA/ProcessingData/ProcessedData/SortByRowDist/
+    # /DANN/aDNA/ProcessingData/ProcessedData/SortByRowFreq/
+    # Save the data oan the corresponding directory dependig on how we sort haplotypes -- each subdirectory containd directories for Hard Sweeps, Soft Sweeps , Neutral , etc
+    
+    qsub_processData
+
+
+4) Concatenate desired number of simulations into a .npy file to use as training input
+
+    qsub qsub_DataForTraining
+
+    # this runs the script data_for_training.py --> in this script you must define the directory of the already processed and sorted simulations as well as the name og the output file.npy. 
+    # The code will generate three output files ex: 
+    #      neutral_ConstantNe_RowDist_n150_w201_sims.npy, HS_ConstantNe_RowDist_n150_w201_sims.npy and SS_ConstantNe_RowDist_n150_w201_sims.npy
+
+
+
+#-----------------------------------------------------------------------------------------------------------------------------------------
+
+qsub_GenerateData # for aDNA data
+# qsub_GenerateData runs GenerateTrainingData.py
+
+qsub_GenerateData_modernMD # for modern human data or Drosophila data
+## qsub_GenerateData_modernMD runs GenerateTestData_Drosophila.py or GenerateTrainingData_modern.py
+
+
+
+
+
+#get position data from simulations
+
+for i in {1..50}; do
+
+    grep "positions:" ../SoftSweep_1e4_THETAvary_Q1_450Kb_${i}.txt > POS_SoftSweep_1e4_THETAvary_Q1_450Kb_${i}.txt
+
+done
+
+
+for i in {1..50}; do
+    mv SouilmiMiss1iMD05_Neutral_THETA1to5_n150_w201_centerWindowDist_trainsrc_${i}.dat SouilmiMiss1iMD05_Neutral_THETA1to5_n150_w201_centerWindowFreq_trainsrc_${i}.dat
+done

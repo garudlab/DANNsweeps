@@ -1,0 +1,57 @@
+#########################################################################
+################### data processing for training ########################
+#########################################################################
+
+(1) Run for each epoch for odd and even number chromosomes separately
+    In GenerateTrainingData.py define the sample and sub-sample size(e.g. 150), window size and sliding window jump.
+    Also define directory of data for each epoch (e.g path='/u/project/ngarud/Garud_lab/aDNA/epochH/VCF.v51.0.H.chr')
+    Define outup file path as well as which chromosomes to process and haplotype sorting style.
+
+    qsub qsub_GenerateData
+
+    # I should use this code to generate training data from different epochs.
+    # Example output file:
+        Tranining.H.odd.RowDist.n150.w201.j5.dat # only odd numberedchromosomes for training (then test on even numbered chromosomes)
+
+(2) Once I have generated the data files from all epochs, merge them together to use for training
+
+    qsub qsub_MergeData
+
+(3) Next generate the target.npy file I will use as input (target doamin) for training the DANN
+    
+    qsub qsub_DataForTraining # make sure the qsub is running the script data_for_training_target.py
+
+
+#########################################################################
+############################# Training DANN #############################
+#########################################################################
+
+
+1) After processing simulations and data for training we are ready to train the DANN
+
+    We can train either a single channel DANN or two channel DANN
+   
+
+
+2) Train model
+
+    qsub qsub_TrainModel
+
+3) Test model
+
+################ scan processing 
+for chr in {1..21..2};do
+    python addRecomb.py -i chr${chr}_H_pred_j10_9.txt -o chr${chr}_H_pred_j10_9_rec.txt -g "/u/project/ngarud/Garud_lab/aDNA/RecombMaps/DeCodeSexAveraged_GRCh37/genetic_map_decode_sex-averaged_chr${chr}.txt"
+
+    rm chr${chr}_H_pred_j10_9.txt
+done
+
+
+#add constant chrom number to file
+
+for chr in {1..21..2};do
+    awk -v num="$chr" '{print $0 "\t" num}' chr${chr}_H_pred_j10_9_rec.txt > chr${chr}_H_pred_j10_9_rec_tmp.txt
+    mv chr${chr}_H_pred_j10_9_rec_tmp.txt chr${chr}_H_pred_j10_9_rec.txt
+done
+
+cat chr*H* > scanOdd_H_j10_epoch9_rec.txt
