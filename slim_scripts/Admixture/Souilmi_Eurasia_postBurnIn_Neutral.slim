@@ -1,0 +1,365 @@
+/*
+ * Implementation of model from Souilmi et al.
+ *
+ * Demographic model: Souilmi 2022
+ * West Eurasian pop history
+ * Souilmi et al., 2022: https://doi.org/10.1038/s41559-022-01914-9
+ * Kamm et al 2019
+ * Dagaard et al. 2018
+ * Jones et al. 2015
+ *
+ * Mariana Harris
+ * mharris94@ucla.edu
+ * July 2024
+ */
+
+initialize() {
+	if (!exists("verbosity"))
+			defineConstant("verbosity", 1);
+	
+	if (exists("slimgui")) {
+		//defineConstant("verbosity", 1);
+		defineConstant("sampleSize", 177);
+		defineConstant("sb", 0.01);
+		defineConstant("MU",1.25e-8);//,1.25e-8
+		defineConstant("run", 1);
+		defineConstant("idOut", 1);
+		defineConstant("recomb_rate",1e-8);
+		defineConstant("sample_gbp",500); //generations befor present (sweep start)
+		defineConstant("THETA_A", 1);
+		defineConstant("PF", 0.95);
+		defineConstant("trees_BurnIN_file", "/Users/marianaharris/Git_repo/DANN_sweeps/SLiM_simulations/Souilmi_burn_in.init.trees"); 
+	}
+	
+	// define constants 
+	defineConstant("Q",1.0);
+	defineConstant("burn_in", 0.00);
+	defineConstant("generation_time", 29);
+	defineConstant("chromosome_length", asInteger(4.5e5));
+	
+	
+	defineConstant("file_path","tmp_intermediate_files/Souilmi_"+asString(run)+".trees"); //tmp_intermediate_files
+	//defineConstant("file_path_data","outData/Souilmi_data_"+asString(id)+".txt");
+	
+	//defineConstant("trees_file", "/tmp/tmp9rsdk7yv.ts");
+	defineConstant("pop_names", c("ANAT", "WHG","CHG","EHG"));
+	
+	// Time of epoch boundaries, in years before present.
+	// The first epoch spans from INF to _T[0].
+	defineConstant("_T", c( 95800, 50400, 45000, 37700,36000,8000,5000,4500,0));
+	
+	// Population sizes in each epoch.
+	_N = array(c(
+		// INF:_T[0], _T[0]:_T[1], etc.
+		c( 29100, 2340, 12000, 12000,12000,12000,12000,12000,12000), // ANAT
+		c( 0, 0, 0, 0,1920,1920,0,0,0), // WHG
+		c( 0, 0, 0, 5730, 5730, 5730, 5730, 5730,0), // CHG
+		c( 0, 0, 0, 0,0,2700,2700,0,0) // EHG
+		), c(9, 4));
+	
+	
+	defineConstant("num_epochs", length(_T));
+	defineConstant("num_populations", ncol(_N));
+	
+	
+	// Population splits, one row for each event.
+	defineConstant("subpopulation_splits", array(c(
+		// time, newpop, size, oldpop
+		c(_T[2], 2, _N[3,2], 0),
+		c(_T[3], 1, _N[4,1], 0),
+		c(_T[4], 3, _N[5,3], 2)
+		
+		), c(4, 3)));
+	
+	// Admixture pulses, one row for each pulse.
+	defineConstant("admixture_pulses", array(c(
+		// time, recipient pop, source pop, rate
+		c(_T[5], 0,1 , 0.5),
+		c(_T[6], 2,3 , 0.4),
+		c(_T[7], 0,2, 0.33)
+		
+		), c(4 ,3)));
+	
+	// Drawn mutations, one row for each mutation.
+	defineConstant("drawn_mutations", c());
+	
+	// Allele frequency conditioning, one row for each.
+	defineConstant("condition_on_allele_frequency", c());
+	
+	initializeTreeSeq();
+	defineConstant("N", asInteger(_N/Q));
+	
+	
+	// mutations
+	initializeMutationType("m1", 0.5, "f", 0);
+	
+	initializeGenomicElementType("g1", m1,1);
+	initializeGenomicElement(g1, 0, chromosome_length-1);
+	
+	initializeMutationRate(0);
+	
+	initializeRecombinationRate(recomb_rate*Q);
+
+}
+function (void)dbg(string$ s, [integer$ debug_level = 2]) {
+	if (verbosity >= debug_level) {
+		catn(community.tick + ": " + s);
+	}
+}
+function (void)err(string$ s) {
+	stop("ERROR: " + s);
+}
+
+// Check that sizes aren't dangerously low or zero (e.g. due to scaling).
+function (void)check_size(integer$ pop, integer$ size, integer$ t) {
+	if (size == 0) {
+		err("The population size of p"+pop+" ("+pop_names[pop]+") is zero " +
+			"at tick "+t+".");
+	} else if (size < 50) {
+		warn("p"+pop+" ("+pop_names[pop]+") has only "+size+" individuals " +
+			"alive at tick "+t+".");
+	}
+}
+
+// Return the number of generations that separate t0 and t1.
+function (integer)gdiff(numeric$ t0, numeric t1) {
+	return asInteger(round((t0-t1)/generation_time/Q));
+}
+
+function (void)selecOn(void){
+	print("selection on");
+	// save the state of the simulation
+	sim.treeSeqOutput("/tmp/slim_" + simID + ".trees");
+	target = sample(p0.individuals.genome1, 1);
+   target.addNewDrawnMutation(m2, asInteger(chromosome_length/2)-1);
+   sim.tag =1; //seleciton is on
+}
+
+
+function (void)checkSweep(void) {
+	counts = p0.genomes.individual.countOfMutationsOfType(m2);
+	freq = mean(counts > 0);
+	subs=sum(sim.substitutions.mutationType == m2);
+	if (freq >= PF)
+	{
+		
+		//p_sample=p0.sampleIndividuals(100);
+		muts=p0.genomes.mutationsOfType(m2);
+		muts = unique(muts).size();
+		line = asString(muts) +  "\t" + asString(sim.cycle)+"\t" +asString(freq);
+		
+		catn(line);
+		
+		if (muts == 1 | subs==1)
+		{
+			print("REACHED PF -- outputting tree");
+			sim.treeSeqOutput(file_path);
+			sim.simulationFinished();
+		}
+		else if (muts>1)
+		{
+			print("SOFT SWEEP - RESTARTING");
+			sim.readFromPopulationFile("/tmp/slim_" + simID + ".trees");
+			// start a newly seeded run
+			setSeed(rdunif(1, 0, asInteger(2^62) - 1));
+			target = sample(p0.individuals.genome1, 1);
+         target.addNewDrawnMutation(m2, asInteger(chromosome_length/2)-1);
+			sim.tag =1; //seleciton is on
+		}
+	
+	}
+	else if ( freq ==0  & sim.tag>=1)
+        {
+            //restart
+            print("LOST SWEEP - RESTARTING");
+            sim.readFromPopulationFile("/tmp/slim_" + simID + ".trees");
+            // start a newly seeded run
+            setSeed(rdunif(1, 0, asInteger(2^62) - 1));
+            target = sample(p0.individuals.genome1, 1);
+            target.addNewDrawnMutation(m2, asInteger(chromosome_length/2)-1);
+            sim.tag =1; //seleciton is on
+
+        }
+
+}
+
+function (void)EndSimulation(void){
+	print("RECHED END OF SIMULATION");
+	sim.treeSeqOutput(file_path);
+	sim.simulationFinished();
+	
+}
+
+// dont add adaptive mutation in other subpops
+	
+
+1 early() {
+	
+	defineConstant("simID", run);
+	sim.tag =0;
+	
+	// Load tree
+	sim.readFromPopulationFile(trees_BurnIN_file);
+	catn("Loaded " + length(sim.subpopulations)
+        + " populations from a file; now in generation " + sim.cycle);
+   catn("Population sizes: " + paste(sim.subpopulations.individualCount));
+   
+   
+   
+   print(subpopulation_splits);
+	
+	sim.setValue("n_restores", 0);
+	sim.setValue("n_saves", 0);
+	sim.setValue("restore_function", F);
+	
+	/*
+     * Create initial populations and migration rates.
+     */
+	
+	// Initial populations.
+	for (i in 1:(num_populations-1)) { // change thos to  0:(num_populations-1) if not reading from file
+		if (N[0,i] > 0) {
+			check_size(i, N[0,i], community.tick);
+			dbg("p = sim.addSubpop("+i+", "+N[0,i]+");");
+			p = sim.addSubpop(i, N[0,i]);
+			dbg("p.name = '"+pop_names[i]+"';");
+			p.name = pop_names[i];
+		}
+	}
+	if (length(sim.subpopulations) == 0) {
+		err("No populations with non-zero size in tick 1.");
+	}
+	
+	// The end of the burn-in is the starting tick, and corresponds to
+	// time T_start. All remaining events are relative to this tick.
+	
+	N_max = max(N[0,0:(num_populations-1)]); // max pop size at oldest epoch
+	G_start = community.tick + asInteger(round(burn_in * N_max));
+	T_start = max(_T);
+	G = G_start + gdiff(T_start, _T);
+	G_end = max(G);
+	
+	
+	/*
+     * Register events occurring at time T_start or more recently.
+     */
+	// Save/restore events. These should come before all other events.
+	if (length(drawn_mutations) > 0) {
+		n_checkpoints = 0;
+		for (i in 0:(ncol(drawn_mutations)-1)) {
+			save = drawn_mutations[4,i] == 1;
+			if (save) {
+				// Saving the state at more than one timepoint can can cause
+				// incorrect conditioning in the rejection samples.
+				if (n_checkpoints > 0) {
+					err("Attempt to save state at more than one checkpoint");
+				}
+				n_checkpoints = n_checkpoints + 1;
+				
+				// Unconditionally save the state before the mutation is drawn.
+				g = G_start + gdiff(T_start, drawn_mutations[0,i]);
+				community.registerLateEvent(NULL, "{save();}", g, g);
+			}
+		}
+	}
+	if (length(condition_on_allele_frequency) > 0) {
+		for (i in 0:(ncol(condition_on_allele_frequency)-1)) {
+			g_start = G_start + gdiff(T_start, condition_on_allele_frequency[0,i]);
+			g_end = G_start + gdiff(T_start, condition_on_allele_frequency[1,i]);
+			mut_type = asInteger(condition_on_allele_frequency[2,i]);
+			pop_id = asInteger(condition_on_allele_frequency[3,i]);
+			op = op_types[asInteger(drop(condition_on_allele_frequency[4,i]))];
+			af = condition_on_allele_frequency[5,i];
+			
+			if (g_start > g_end) {
+				err("Attempt to register AF conditioning callback with g_start="+
+					g_start+" > g_end="+g_end);
+			}
+			
+			// Restore state if AF condition not met.
+			community.registerLateEvent(NULL,
+				"{if (!(af(m"+mut_type+", p"+pop_id+") "+op+" "+af+"))" +
+				" restore();}",
+				g_start, g_end);
+		}
+	}
+	
+	// Split events.
+	if (length(subpopulation_splits) > 0 ) {
+		for (i in 0:(ncol(subpopulation_splits)-1)) {
+			g = G_start + gdiff(T_start, subpopulation_splits[0,i]);
+			newpop = drop(subpopulation_splits[1,i]);
+			size = asInteger(subpopulation_splits[2,i] / Q);
+			oldpop = subpopulation_splits[3,i];
+			check_size(newpop, size, g);
+			community.registerLateEvent(NULL,
+				"{dbg(self.source); " +
+				"p = sim.addSubpopSplit("+newpop+","+size+","+oldpop+"); " +
+				"p.name = '"+pop_names[newpop]+"';}",
+				g, g);
+		}
+	}
+	
+	
+	// Admixture pulses.
+	if (length(admixture_pulses) > 0 ) {
+		for (i in 0:(ncol(admixture_pulses)-1)) {
+			g = G_start + gdiff(T_start, admixture_pulses[0,i]);
+			dest = asInteger(admixture_pulses[1,i]);
+			src = asInteger(admixture_pulses[2,i]);
+			rate = admixture_pulses[3,i];
+			community.registerLateEvent(NULL,
+				"{dbg(self.source); " +
+				"p"+dest+".setMigrationRates("+src+", "+rate+");}",
+				g, g);
+			// I don't nee to set back mogration to zero because
+			// populations cease to exist
+			//community.registerLateEvent(NULL,
+			//	"{dbg(self.source); " +
+			//	"p"+dest+".setMigrationRates("+src+", 0);}",
+			//	g+1, g+1);
+		}
+	}
+	
+	
+	// Population size changes.
+	if (num_epochs > 1) {
+		for (i in 1:(num_epochs-1)) {
+			g = G[i-1];
+			for (j in 0:(num_populations-1)) {
+				// Change population size if this hasn't already been taken
+				// care of by sim.addSubpop() or sim.addSubpopSplit().
+				if (N[i,j] != N[i-1,j] & N[i-1,j] != 0) {
+					//check_size(j, N[i,j], g);
+					community.registerLateEvent(NULL,
+						"{dbg(self.source); " +
+						"p"+j+".setSubpopulationSize("+N[i,j]+");}",
+						g, g);
+				}
+			
+			}
+		}
+	}
+	
+	
+	
+	catn("\n"+"Popu matrices");
+	print(G);
+	
+	catn("Gstart: "+ G_start);
+	
+	
+	catn("Gend: " + G_end);
+
+	defineConstant("G_sample", G_end-sample_gbp);
+
+	
+	//run until the end 
+	community.registerLateEvent(NULL, "{dbg(self.source); EndSimulation();}", G_sample, G_sample);
+	
+	//print(N);
+	
+	//print(subpopulation_splits);
+	//print(admixture_pulses);
+
+}

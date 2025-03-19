@@ -1,0 +1,51 @@
+#!/bin/bash
+#$ -cwd
+# error = Merged with joblog
+#$ -o joblog.$JOB_ID.$TASK_ID
+#$ -j y
+## Edit the line below as needed:
+#$ -l h_rt=200:00:00,h_data=10G,highp
+## Modify the parallel environment
+## and the number of cores as needed:
+#$ -pe shared 1
+# Notify when
+#$ -m a
+#  Job array indexes
+#$ -t 50-50:1 #50
+
+# echo job info on joblog:
+echo "Job $JOB_ID started on:   " `hostname -s`
+echo "Job $JOB_ID started on:   " `date `
+echo " "
+
+# load the job environment:
+# load the job environment:
+. /u/local/Modules/default/init/modules.sh
+module load anaconda3
+module load python/3.7.3
+
+#activate slim environment
+conda activate /u/home/m/mharrish/miniconda3/envs/slim4
+
+
+is=(null ${is[@]}) # this pads the file with an extra line in the beginning. 
+i=${is[$SGE_TASK_ID]}
+
+id=$SGE_TASK_ID
+
+Q=1
+
+
+file=tmpFiles/Simulation_${id}.txt
+echo ${file}
+bash run_Neutral_tree.sh ${file} $Q $id
+
+
+rm /tmp/*.trees
+
+
+# echo job info on joblog:
+echo "Job $JOB_ID ended on:   " `hostname -s`
+echo "Job $JOB_ID ended on:   " `date `
+echo " "
+
