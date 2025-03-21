@@ -31,8 +31,8 @@ done
 
 for i in {1..50}; do
     #mv MD_Neutral_Souilmi_Q1_${i}.txt NeutralSouilmiMiss2MD05_THETA0.0_target0_${i}.txt
-    mv  MD_SoftSweep_Souilmi_Q1_${i}.txt  SoftSweepSouilmiMiss2MD05_THETA5.0_target0_${i}.txt
-    #mv MD_HardSweep_Souilmi_Q1_${i}.txt  HardSweepSouilmiMiss2MD05_THETA0.01_target0_${i}.txt
+    mv  MD_SoftSweep_1e4_THETAvary_Q1_450Kb_${i}.txt  SoftSweepConstantNeMD43_THETA5.0_target0_${i}.txt
+    #mv MD_HardSweep_1e4_Q1_450Kb_${i}.txt  HardSweepConstantNeMD43_THETA0.01_target0_${i}.txt
     #mv MD_SGV_ConstantNe_Q1_${i}.txt  SGVMD_THETA0.01_target0_${i}.txt
 done
 

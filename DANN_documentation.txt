@@ -65,20 +65,23 @@ cat chr*H* > scanOdd_H_j10_epoch9_rec.txt
 ########################################################################################################################
 
 for chr in {1..22};do
-    python ../addRecomb.py -i chr${chr}_H_predCNN_j10_05.txt -o chr${chr}_H_predCNN_j10_05_rec.txt -g "/u/project/ngarud/Garud_lab/aDNA/RecombMaps/DeCodeSexAveraged_GRCh37/genetic_map_decode_sex-averaged_chr${chr}.txt"
+    python ../addRecomb.py -i chr${chr}_H_pred_j10_19.txt -o chr${chr}_H_pred_j10_19_rec.txt -g "/u/project/ngarud/Garud_lab/aDNA/RecombMaps/DeCodeSexAveraged_GRCh37/genetic_map_decode_sex-averaged_chr${chr}.txt"
 
-    #rm chr${chr}_H_pred_j10_08.txt
+done
+
+for chr in {1..22};do
+    rm -f chr${chr}_H_predCNN_j10_19.txt
 done
 
 
 #add constant chrom number to file
 
 for chr in {1..22};do
-    awk -v num="$chr" '{print $0 "\t" num}' chr${chr}_H_predCNN_j10_05_rec.txt > chr${chr}_H_predCNN_j10_05_rec_tmp.txt
-    mv chr${chr}_H_predCNN_j10_05_rec_tmp.txt chr${chr}_H_predCNN_j10_05_rec.txt
+    awk -v num="$chr" '{print $0 "\t" num}' chr${chr}_H_predCNN_j10_19_rec.txt > chr${chr}_H_predCNN_j10_19_rec_tmp.txt
+    mv chr${chr}_H_predCNN_j10_19_rec_tmp.txt chr${chr}_H_predCNN_j10_19_rec.txt
 done
 
-cat chr*H*_rec.txt > scanCNN_RowDist_H_j10_05_rec.txt
+cat chr*H*_rec.txt > scan_RowFreq_H_j10_19_rec.txt
 
 
 
