@@ -7,7 +7,7 @@ import random
 
 
 def mutate_and_recap(inFile, outFile,r,N,mu,Q):
-      n_window=201
+      #n_window=201
       # Load the .trees file from slim output
       ts = tskit.load(inFile) #pyslim.load(inFile)
       ts = pyslim.update(ts)
@@ -43,6 +43,10 @@ def mutate_and_recap(inFile, outFile,r,N,mu,Q):
       f"and mean pairwise nucleotide diversity is {mutated.diversity()}, "
       f"and number of sites is {mutated.num_sites}.")
 
+
+      n_window = mutated.num_sites
+      print("window segregating sites: "+ str(n_window))
+
       ###output S and Pi ?
       #print(mutated.genotype_matrix().shape)
       print("output MS file")
@@ -56,6 +60,8 @@ def mutate_and_recap(inFile, outFile,r,N,mu,Q):
       pos=[]
       for variant in mutated.variants():
             pos.append(int(variant.position))
+
+      print("num positions: " + str(len(pos)))
 
       indx_subsample= sorted(random.sample(range(len(pos)), n_window))
       pos_sub = [pos[i] for i in indx_subsample]

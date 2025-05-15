@@ -7,7 +7,7 @@ import random
 
 
 def overlay_neutral_muts(inFile, outFile,mu,Q):
-      n_window = 201
+      
       # Load the .trees file from slim output
       ts = tskit.load(inFile) #pyslim.load(inFile)
       ts = pyslim.update(ts)
@@ -17,7 +17,7 @@ def overlay_neutral_muts(inFile, outFile,mu,Q):
       print(f"Maximum number of roots: {max_roots}")
 
       #simplify and sample
-      individuals = pyslim.individuals_alive_at(ts, 0, population=0) #individuals alive at present
+      individuals = pyslim.individuals_alive_at(ts, 0,population=0) #individuals alive at present
       sample = np.random.choice(individuals, size=177,replace=False)
       keep_nodes = []
       for i in sample:
@@ -37,6 +37,9 @@ def overlay_neutral_muts(inFile, outFile,mu,Q):
       f"and mean pairwise nucleotide diversity is {mutated.diversity()}, "
       f"and number of sites is {mutated.num_sites}.")
 
+      n_window = mutated.num_sites
+      print("window segregating sites: "+ str(n_window))
+
       ###output S and Pi ?
       #print(mutated.genotype_matrix().shape)
       print("output MS file")
@@ -52,7 +55,9 @@ def overlay_neutral_muts(inFile, outFile,mu,Q):
       for variant in mutated.variants():
             pos.append(int(variant.position))
 
-      indx_subsample= sorted(random.sample(range(len(pos)), 201))
+      print("num positions: " + str(len(pos)))
+      
+      indx_subsample= sorted(random.sample(range(len(pos)), n_window)) 
       pos_sub = [pos[i] for i in indx_subsample]
       #add positions to MS output
       pos_lst=[str(element / 4.5e5) for element in pos_sub]
