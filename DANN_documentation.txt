@@ -39,25 +39,6 @@
 
 3) Test model
 
-################ scan processing 
-for chr in {1..21..2};do
-    python addRecomb.py -i chr${chr}_H_pred_j10_9.txt -o chr${chr}_H_pred_j10_9_rec.txt -g "/u/project/ngarud/Garud_lab/aDNA/RecombMaps/DeCodeSexAveraged_GRCh37/genetic_map_decode_sex-averaged_chr${chr}.txt"
-
-    rm chr${chr}_H_pred_j10_9.txt
-done
-
-
-#add constant chrom number to file
-
-for chr in {1..21..2};do
-    awk -v num="$chr" '{print $0 "\t" num}' chr${chr}_H_pred_j10_9_rec.txt > chr${chr}_H_pred_j10_9_rec_tmp.txt
-    mv chr${chr}_H_pred_j10_9_rec_tmp.txt chr${chr}_H_pred_j10_9_rec.txt
-done
-
-cat chr*H* > scanOdd_H_j10_epoch9_rec.txt
-
-
-
 
 
 ########################################################################################################################
@@ -65,25 +46,22 @@ cat chr*H* > scanOdd_H_j10_epoch9_rec.txt
 ########################################################################################################################
 
 for chr in {1..22};do
-    python ../addRecomb.py -i chr${chr}_H_pred_j10_19.txt -o chr${chr}_H_pred_j10_19_rec.txt -g "/u/project/ngarud/Garud_lab/aDNA/RecombMaps/DeCodeSexAveraged_GRCh37/genetic_map_decode_sex-averaged_chr${chr}.txt"
-
-done
-
-for chr in {1..22};do
-    rm -f chr${chr}_H_predCNN_j10_19.txt
+    python ../addRecomb.py -i chr${chr}_CHBwithMD_pred_j10_10.txt -o chr${chr}_CHBwithMD_pred_j10_10_rec.txt -g "/u/project/ngarud/Garud_lab/aDNA/RecombMaps/DeCodeSexAveraged_GRCh37/genetic_map_decode_sex-averaged_chr${chr}.txt"
 done
 
 
 #add constant chrom number to file
 
 for chr in {1..22};do
-    awk -v num="$chr" '{print $0 "\t" num}' chr${chr}_H_predCNN_j10_19_rec.txt > chr${chr}_H_predCNN_j10_19_rec_tmp.txt
-    mv chr${chr}_H_predCNN_j10_19_rec_tmp.txt chr${chr}_H_predCNN_j10_19_rec.txt
+    awk -v num="$chr" '{print $0 "\t" num}' chr${chr}_CHBwithMD_pred_j10_10_rec.txt > chr${chr}_CHBwithMD_pred_j10_10_rec_tmp.txt
+    mv chr${chr}_CHBwithMD_pred_j10_10_rec_tmp.txt chr${chr}_CHBwithMD_pred_j10_10_rec.txt
 done
 
-cat chr*H*_rec.txt > scan_RowFreq_H_j10_19_rec.txt
+cat chr*CHBwithMD*_rec.txt > scan_RowFreq_CHBwithMD_j10_10_rec.txt
 
-
+for chr in {1..22};do
+    rm -f chr${chr}_CHBwithMD_pred_j10_10.txt
+done
 
 
 ##### GET TOP PEAKS VCF AND ANNOTION
@@ -124,7 +102,6 @@ bcftools view -R filter_positions.txt v51.0.H.vcf.gz -Oz -o topPeaks_v51.0.H.vcf
 #I used VEP to get genses in 256000 windows upstream and downstream of variant
 
 grep "protein_coding" VEP_Hpeaks.txt > VEP_Hpeaks_proteinCoding.txt
-
 
 
 ##using bedtools only
@@ -168,9 +145,225 @@ module load bcftools
 #Neutral
 #29970016-30630912
 
-bgzip -c VCF.v51.0.H.chr2.vcf > VCF.v51.0.H.chr2.vcf.gz
-tabix -p vcf VCF.v51.0.H.chr2.vcf.gz
-bcftools view -r 2:29970016-30630912 VCF.v51.0.H.chr2.vcf.gz -o chr2.peakH12.vcf
+bgzip -c  VCF.v40.3.EN.chr4.vcf >  VCF.v40.3.EN.chr4.vcf.gz
+tabix -p vcf  VCF.v40.3.EN.chr4.vcf.gz
+
+bcftools view -r 4:33679737-34856751  VCF.v40.3.EN.chr4.vcf.gz -o chr4.peakN.33679737-34856751.vcf
+
+bcftools view -r 6:27556692-28298012 VCF.v51.0.IA.chr6.vcf.gz -o chr6.peakIA.H12.HLA.vcf
+
 
 qsub qsub_DataForViz #edit file path accordingly
+
+# ------------------------------------------------------------------------------------------------------------------------------------------------
+
+##### Find overlapping peaks bedtools
+
+bedtools multiinter -names N BA IA H -i peaks_N.bed  peaks_BA.bed peaks_IA.bed peaks_H.bed > peaks_overalp.bed
+#bedtools multiinter -names N BA IA H -i TopPeaks_N.bed  TopPeaks_BA.bed TopPeaks_IA.bed TopPeaks_H.bed > TopPeaks_overalp.bed
+
+#Add a cluster ID to each overlapping group
+bedtools cluster -i peaks_overalp.bed > peaks_overalp_clusters.bed ## the fourth column that it adds is the cluster ID to wich it belongs to
+
+
+#For each cluster, keep the line with the most epochs in overlap in column 4
+
+awk '{
+    cluster = $NF;
+    if ($4 > max_count[cluster]) {
+        max_count[cluster] = $4;
+        best_line[cluster] = $0;
+    }
+} END {
+    for (c in best_line) print best_line[c];
+}' peaks_overalp_clusters.bed| cut -f1-9 | sort -k1,1n -k2,2n > peaks_overlap_final.bed
+
+
+
+#### Find overlap with genes 
+
+# Downloads refGene annotation for hg19
+wget http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/refGene.txt.gz
+gunzip refGene.txt.gz
+
+# Convert UCSC's weird refGene format to BED (columns 3 = chrom, 5 = txStart, 6 = txEnd, 13 = gene name)
+cut -f3,5,6,13 refGene.txt > refGene.hg19.bed
+
+#remove chr string from first column to match our format
+sed -i 's/chr//g' refGene.hg19.bed
+
+#sort, make sure both files are sorted
+sort -k1,1 -k2,2n refGene.hg19.sorted.bed
+
+# intersect with bedtools
+
+bedtools intersect -a peaks_overlap_final.bed -b /u/project/ngarud/Garud_lab/aDNA/GRCh37_annotations/refGene.hg19.sorted.bed -wa -wb > overlaps_with_genes.bed # this gives us all genes that overlap
+
+
+bedtools intersect -a peaks_overalp_clusters.bed -b /u/project/ngarud/Garud_lab/aDNA/GRCh37_annotations/refGene.hg19.sorted.bed -wa -wb > overlaps_with_genes_notmerged.bed 
+
+# Find the closest gene by distance
+#bedtools closest -a peaks_overlap_final.bed -b /u/project/ngarud/Garud_lab/aDNA/GRCh37_annotations/refGene.hg19.sorted.bed -d > closest_genes.bed
+
+# unique genes (remove repeted rows igoring columns 11,12)
+awk '{
+    key = ""
+    for (i = 1; i <= NF; i++) {
+        if (i != 11 && i != 12) key = key $i OFS
+    }
+    if (!seen[key]++) print
+}' overlaps_with_genes.bed > overlaps_with_genes_unique.bed
+
+
+
+#Overlap with Schrider and Kern 2017 paper
+bedtools intersect -a peaks_overlap_final.bed -b /u/project/ngarud/Garud_lab/aDNA/SweepsInLit/all_sweeps_merged_CEU_sorted.bed -wa -wb | awk '!seen[$2]++' > overlaps_with_Schrider.bed 
+
+bedtools window -a /u/project/ngarud/Garud_lab/aDNA/SweepsInLit/all_sweeps_merged_CEU_sorted.bed -b peaks_overlap_final.bed -w 1000000 | awk '!seen[$2]++'  > overlaps_with_Schrider_1Mb.bed 
+
+
+# From my sweep list file 
+
+tail -n +2 List_sweeps.csv >List_sweeps.csv_2 # remove header 
+mv List_sweeps.csv_2 List_sweeps.csv
+
+# Overlap Irving-Pease
+grep "Irving" List_sweeps.csv > List_sweeps_Irving.csv
+awk -F',' '{OFS="\t"; print $3, $7, $8, $4}' List_sweeps_Irving.csv > List_sweeps_Irving.bed
+sort -k1,1n -k2,2n List_sweeps_Irving.bed > List_sweeps_Irving_sorted.bed
+
+bedtools intersect -a peaks_overlap_final.bed -b /u/project/ngarud/Garud_lab/aDNA/SweepsInLit/List_sweeps_Irving_sorted.bed -wa -wb > overlaps_with_Irving.bed 
+
+bedtools window -a /u/project/ngarud/Garud_lab/aDNA/SweepsInLit/List_sweeps_Irving_sorted.bed -b peaks_overlap_final.bed -w 1000000  > overlaps_with_Irving_1Mb.bed 
+
+# Overlap Souilmi
+grep "Souilmi et" List_sweeps.csv > List_sweeps_Souilmi.csv
+awk -F',' '{OFS="\t"; print $3, $7, $8, $4}' List_sweeps_Souilmi.csv > List_sweeps_Souilmi.bed
+sort -k1,1n -k2,2n List_sweeps_Souilmi.bed > List_sweeps_Souilmi_sorted.bed
+
+bedtools intersect -a peaks_overlap_final.bed -b /u/project/ngarud/Garud_lab/aDNA/SweepsInLit/List_sweeps_Souilmi_sorted.bed -wa -wb > overlaps_with_Souilmi.bed 
+
+bedtools window -a /u/project/ngarud/Garud_lab/aDNA/SweepsInLit/List_sweeps_Souilmi_sorted.bed -b peaks_overlap_final.bed -w 1000000  > overlaps_with_Souilmi_1Mb.bed 
+
+
+# Overlap Kerner
+grep "Kerner et" List_sweeps.csv > List_sweeps_Kerner.csv
+awk -F',' '{OFS="\t"; print $3, $7, $8, $4}' List_sweeps_Kerner.csv > List_sweeps_Kerner.bed
+sort -k1,1n -k2,2n List_sweeps_Kerner.bed > List_sweeps_Kerner_sorted.bed
+
+bedtools intersect -a peaks_overlap_final.bed -b /u/project/ngarud/Garud_lab/aDNA/SweepsInLit/List_sweeps_Kerner_sorted.bed -wa -wb > overlaps_with_Kerner.bed 
+
+bedtools window -a /u/project/ngarud/Garud_lab/aDNA/SweepsInLit/List_sweeps_Kerner_sorted.bed -b peaks_overlap_final.bed -w 1000000  > overlaps_with_Kerner_1Mb.bed 
+
+#Overlap wit Le
+grep "Le et" List_sweeps.csv > List_sweeps_Le.csv
+awk -F',' '{OFS="\t"; print $2, $6, $7, $3}' List_sweeps_Le.csv > List_sweeps_Le.bed
+sort -k1,1n -k2,2n List_sweeps_Le.bed > List_sweeps_Le_sorted.bed
+bedtools intersect -a peaks_overlap_final.bed -b /u/project/ngarud/Garud_lab/aDNA/SweepsInLit/List_sweeps_Le_sorted.bed -wa -wb > overlaps_with_Le.bed 
+
+# within 1Mb of peaks
+bedtools window -a /u/project/ngarud/Garud_lab/aDNA/SweepsInLit/List_sweeps_Le_sorted.bed -b peaks_overlap_final.bed -w 1000000  > overlaps_with_Le_1Mb.bed 
+
+
+
+grep "Akbari" List_sweeps.csv > List_sweeps_Akbari.csv
+
+awk -F',' '{OFS="\t"; print $2, $6, $7, $3}' List_sweeps_Akbari.csv > List_sweeps_Akbari.bed
+
+sort -k1,1n -k2,2n List_sweeps_Akbari.bed > List_sweeps_Akbari_sorted.bed
+
+bedtools intersect -a peaks_overlap_final.bed -b /u/project/ngarud/Garud_lab/aDNA/SweepsInLit/List_sweeps_Akbari_sorted.bed -wa -wb > overlaps_with_Akbari.bed 
+
+
+# within 1Mb of peaks
+bedtools window -a /u/project/ngarud/Garud_lab/aDNA/SweepsInLit/List_sweeps_Akbari_sorted.bed -b peaks_overlap_final.bed -w 1000000  > overlaps_with_Akbari_1Mb.bed 
+
+# Pandey Harris
+grep "Pandey" List_sweeps.csv > List_sweeps_PandeyHarris.csv
+awk -F',' '{OFS="\t"; print $2, $6, $7, $3}' List_sweeps_PandeyHarris.csv > List_sweeps_PandeyHarris.bed
+sort -k1,1n -k2,2n List_sweeps_PandeyHarris.bed > List_sweeps_PandeyHarris_sorted.bed
+
+bedtools intersect -a peaks_overlap_final.bed -b /u/project/ngarud/Garud_lab/aDNA/SweepsInLit/List_sweeps_PandeyHarris_sorted.bed -wa -wb > overlaps_with_PandeyHarris.bed 
+
+bedtools window -a /u/project/ngarud/Garud_lab/aDNA/SweepsInLit/List_sweeps_PandeyHarris_sorted.bed -b peaks_overlap_final.bed -w 1000000  > overlaps_with_PandeyHarris_1Mb.bed 
+
+
+#Mathieson
+grep "Mathieson" List_sweeps.csv > List_sweeps_Mathieson.csv
+awk -F',' '{OFS="\t"; print $2, $6, $7, $3}' List_sweeps_Mathieson.csv > List_sweeps_Mathieson.bed
+sort -k1,1n -k2,2n List_sweeps_Mathieson.bed > List_sweeps_Mathieson_sorted.bed
+
+bedtools intersect -a peaks_overlap_final.bed -b /u/project/ngarud/Garud_lab/aDNA/SweepsInLit/List_sweeps_Mathieson_sorted.bed -wa -wb > overlaps_with_Mathieson.bed 
+
+bedtools window -a /u/project/ngarud/Garud_lab/aDNA/SweepsInLit/List_sweeps_Mathieson_sorted.bed -b peaks_overlap_final.bed -w 1000000 > overlaps_with_Mathieson_1Mb.bed 
+
+
+#Field et al 
+grep "Field" List_sweeps.csv > List_sweeps_Field.csv
+awk -F',' '{OFS="\t"; print $2, $6, $7, $3}' List_sweeps_Field.csv > List_sweeps_Field.bed
+sort -k1,1n -k2,2n List_sweeps_Field.bed > List_sweeps_Field_sorted.bed
+
+bedtools intersect -a peaks_overlap_final.bed -b /u/project/ngarud/Garud_lab/aDNA/SweepsInLit/List_sweeps_Field_sorted.bed -wa -wb > overlaps_with_Field.bed 
+
+
+#overlap in schrider and akbari
+
+
+bedtools intersect -a /u/project/ngarud/Garud_lab/aDNA/SweepsInLit/List_sweeps_Akbari_sorted.bed -b /u/project/ngarud/Garud_lab/aDNA/SweepsInLit/all_sweeps_merged_CEU_sorted.bed -wa -wb | awk '!seen[$2]++' |wc -l 
+
+
+#overlap across scans
+
+bedtools multiinter -i Model_ALL_RowFreq_201_ConstantNeMD43srcALLSNPs_batch64_lr1e-5/peaks_overlap_final.bed  Model_ALL_RowFreq_201_SouilmiMD43srcALLSNPs_batch64_lr1e-5/peaks_overlap_final.bed  Model_ALL_RowFreq_201_SouilmiMD05srcALLSNPs_batch64_lr1e-5/peaks_overlap_final.bed > peaks_DANNmodels_overalp.bed
+
+#Add a cluster ID to each overlapping group
+bedtools cluster -i peaks_DANNmodels_overalp.bed > peaks_DANNmodels_overalp_clusters.bed ## the fourth column that it adds is the cluster ID to wich it belongs to
+
+#For each cluster, keep the line with the most overlaps  in column 4
+
+awk '{
+    cluster = $NF;
+    if ($4 > max_count[cluster]) {
+        max_count[cluster] = $4;
+        best_line[cluster] = $0;
+    }
+} END {
+    for (c in best_line) print best_line[c];
+}' peaks_DANNmodels_overalp_clusters.bed| cut -f1-9 | sort -k1,1n -k2,2n > peaks_DANNmodels_overlap_final.bed
+
+
+
+#just keep instances where all three scans overlap
+awk '$4 == 3' peaks_DANNmodels_overlap_final.bed > peaks_DANNmodels_AllScansoverlap_final.bed
+
+
+
+
+##### Akbari table 4 online
+# get all rows with posterior prob of sweep >0.99
+
+zcat Selection_Summary_Statistics.tsv.gz | tail -n +24 | awk -F'\t' '$13 > 0.99' > Akbari_Summary_Statistics_prob99.txt
+
+
+
+
+### Merge all bed files with aDNA sweeps
+cat List_sweeps_Akbari_sorted.bed List_sweeps_Irving_sorted.bed List_sweeps_Kerner_sorted.bed List_sweeps_Mathieson_sorted.bed List_sweeps_PandeyHarris_sorted.bed > List_sweeps_ALL_aDNA.bed
+
+
+awk '{OFS="\t"; $2 -= 500000; $3 += 500000; print }' peaks_overlap_final.bed > peaks_overlap_final_plus500Kb.bed
+awk '{OFS="\t"; $2 -= 1000000; $3 += 1000000; print }' peaks_overlap_final.bed > peaks_overlap_final_plus1Mb.bed
+
+
+
+awk -F'\t' '{OFS="\t"; print $1, $2, $3}' List_sweeps_ALL_aDNA.bed > List_sweeps_ALL_aDNA_tmp.bed
+sort -k1,1n -k2,2n List_sweeps_ALL_aDNA_tmp.bed > List_sweeps_ALL_aDNA_sorted.bed
+
+rm List_sweeps_ALL_aDNA_tmp.bed
+
+bedtools intersect -v  -a peaks_overlap_final.bed -b /u/project/ngarud/Garud_lab/aDNA/SweepsInLit/List_sweeps_ALL_aDNA_sorted.bed  > novel_sweeps.bed
+
+bedtools intersect -v  -a peaks_overlap_final_plus1Mb.bed -b /u/project/ngarud/Garud_lab/aDNA/SweepsInLit/List_sweeps_ALL_aDNA_sorted.bed 
+
+
 

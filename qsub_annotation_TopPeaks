@@ -1,0 +1,62 @@
+#!/bin/bash
+
+#$ -cwd
+# error = Merged with joblog
+#$ -o joblog.$JOB_ID
+#$ -j y
+## Edit the line below as needed:
+#$ -l h_rt=20:00:00,h_data=50G    #RTX2080Ti V100  A100
+## Modify the parallel environment
+## and the number of cores as needed:
+#$ -pe shared 1
+# Notify when
+#$ -m a
+
+# load the job environment:
+module load plink
+module load htslib
+module load bcftools
+module load bedtools
+
+
+data_file=v40.3.EN
+popu=N
+
+
+plink --bfile ../${data_file} --recode vcf --out ${data_file} 
+
+bgzip ${data_file}.vcf
+bcftools index ${data_file}.vcf.gz
+
+bcftools query -f '%CHROM\t%POS\t%POS\t%ID\n' ${data_file}.vcf.gz >  ${data_file}.bed #make bedfile
+
+mv peaks_${popu}.bed peaks_${popu}_RowFreq.bed
+
+awk '{mean = int(($2 + $3) / 2 + 0.5); printf "%s\t%d\n", $1, mean}' peaks_${popu}_RowFreq.bed > peaksPos_${popu}_RowFreq.bed_tmp
+awk -F'\t' 'BEGIN {OFS="\t"} {print $0, $2 + 1}' peaksPos_${popu}_RowFreq.bed_tmp > peaksPos_${popu}_RowFreq.bed
+
+rm -f peaksPos_${popu}_RowFreq.bed_tmp
+
+# filter common chromosomes
+awk '{print $1}' peaksPos_${popu}_RowFreq.bed | sort -u > query_chroms.txt
+awk '{print $1}' ${data_file}.bed | sort -u > db_chroms.txt
+comm -12 query_chroms.txt db_chroms.txt > common_chroms.txt
+
+#  filter BED files:
+grep -wFf common_chroms.txt peaksPos_${popu}_RowFreq.bed > filtered_query.bed
+grep -wFf common_chroms.txt ${data_file}.bed > filtered_db.bed
+
+mv filtered_query.bed peaksPos_${popu}_RowFreq.bed
+mv filtered_db.bed ${data_file}.bed 
+
+bedtools closest -a peaksPos_${popu}_RowFreq.bed -b ${data_file}.bed -d > topPeaks_${data_file}.bed
+
+#get positons to filter VCF
+cut -f4,5 topPeaks_${data_file}.bed> filter_positions.txt
+
+bcftools view -R filter_positions.txt ${data_file}.vcf.gz -Oz -o topPeaks_${data_file}.vcf.gz
+
+
+
+
+

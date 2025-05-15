@@ -22,6 +22,8 @@ done
 #remove empty lines
 for file in *; do
     sed -i '/^$/d' "$file"
+    #grep -c '^$' $file #count empty lines
+    #echo $file
 done
 
 
@@ -31,8 +33,8 @@ done
 
 for i in {1..50}; do
     #mv MD_Neutral_Souilmi_Q1_${i}.txt NeutralSouilmiMiss2MD05_THETA0.0_target0_${i}.txt
-    mv  MD_SoftSweep_1e4_THETAvary_Q1_450Kb_${i}.txt  SoftSweepConstantNeMD43_THETA5.0_target0_${i}.txt
-    #mv MD_HardSweep_1e4_Q1_450Kb_${i}.txt  HardSweepConstantNeMD43_THETA0.01_target0_${i}.txt
+    mv  MD_SoftSweep_Souilmi_Q1_${i}.txt  SoftSweepSouilmiTHETA5SelecLow_THETA5.0_target0_${i}.txt
+    #mv  MD_HardSweep_Souilmi_Q1_${i}.txt  HardSweepSouilmiSelecLow_THETA0.01_target0_${i}.txt
     #mv MD_SGV_ConstantNe_Q1_${i}.txt  SGVMD_THETA0.01_target0_${i}.txt
 done
 
@@ -106,4 +108,43 @@ done
 
 for i in {1..50}; do
     mv SouilmiMiss1iMD05_Neutral_THETA1to5_n150_w201_centerWindowDist_trainsrc_${i}.dat SouilmiMiss1iMD05_Neutral_THETA1to5_n150_w201_centerWindowFreq_trainsrc_${i}.dat
+done
+
+
+
+
+# get num origins and theta
+
+awk '{if ($0 ~ /REACHED PF -- outputting tree/) print prev2; prev2=prev; prev=$0}' joblog.8127162.1 > num_origins_sample.txt_1
+
+awk '{if ($0 ~ /REACHED PF -- outputting tree/) print prev; prev=$0}' joblog.8127162.1 > num_origins.txt_1
+
+
+awk '/RECHED END OF SIMULATION/{found=1; next} found {print; found=0}' joblog.8042099.50 > num_origins.txt_2
+
+sed -i '/SIMULATION END REACHED NO SWEEP -- RESTARTING/d' num_origins.txt_2
+
+cat num_origins.txt_1 num_origins.txt_2 > num_origins.txt
+
+
+
+find PopGenStats/ -type f ! -exec test -e /u/project/ngarud/Garud_lab/DANN/aDNA/ProcessingData/ProcessedData/PopGenStats/{} \; -exec cp {} /u/project/ngarud/Garud_lab/DANN/aDNA/ProcessingData/ProcessedData/PopGenStats/ \;
+
+awk '
+/\/\// {slash_count++}  # Count lines with `//`
+slash_count >= 9000 {print}  # Print all lines after the nth occurrence
+' Neutral_Souilmi_Q1_20.txt > Neutral_Souilmi_Q1_20.txt_pt2
+
+awk '
+/\/\// {slash_count++}  # Count lines with `//`
+slash_count >= 9528 {print} ' Neutral_Souilmi_Q1_9.txt | head
+
+
+sed -i 's|0//|0\n//|g' Neutral_Souilmi_Q1_9.txt
+
+
+
+for i in {41..50}; do
+    echo $i
+    grep "segsites" Neutral_Souilmi_Q1_${i}.txt | wc -l
 done
