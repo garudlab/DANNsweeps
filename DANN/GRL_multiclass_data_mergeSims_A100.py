@@ -28,10 +28,10 @@ print("GPU is", "available" if tf.config.list_physical_devices('GPU') else "NOT 
 print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
 
 
-seed = 1994
-tf.random.set_seed(seed)
-np.random.seed(seed)
-random.seed(seed)
+#seed = 1994
+#tf.random.set_seed(seed)
+#np.random.seed(seed)
+#random.seed(seed)
 #strategy = tf.distribute.MirroredStrategy()
 
 ### --------- Mixed Precision Training -------------------#
@@ -416,7 +416,7 @@ def create_model(mmap_sim,loss_weights):
 
     model = Model(inputs=input_tensor, outputs=[output_branch1, output_branch2])
 
-    optimizer =  Adam(learning_rate=1e-4) #0.0005, 0.001 clipnorm=1.0
+    optimizer =  Adam(learning_rate=1e-5) #0.0005, 0.001 clipnorm=1.0
     #optimizer = mixed_precision.LossScaleOptimizer(optimizer)  
     #optimizer = RMSprop(learning_rate=0.001)# Compile the model
 
@@ -572,7 +572,7 @@ def save_trainedModel(model,path):
 
 
 def load_grl_model_lambdaScheduler(path):
-    optimizer =  Adam(learning_rate=1e-4) #0.0005
+    optimizer =  Adam(learning_rate=1e-5) #0.0005
     # Register GradReverse for serialization  
     tf.keras.utils.get_custom_objects()['GradReverse'] = GradReverse
     tf.keras.utils.get_custom_objects()['custom_bce'] = custom_bce
