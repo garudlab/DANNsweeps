@@ -1,0 +1,33 @@
+# install tensorflow for gpu on hoffmans2 
+https://support.idre.ucla.edu/helpdesk/KB/View/67402712-guide-for-installing-tensorflow-and-pytorch
+
+
+(1)  Request a compute node, specifying GPU requirements. This step is necessary even for installing GPU versions.
+
+	qrsh -l h_data=10G,gpu,A100
+
+	module load anaconda3
+	conda activate base
+
+(2)  Set the Python and CUDA Toolkit versions.
+
+	 export PYTHON_VER=3.9
+ 	 export CUDA_TK_VER=11.8
+
+(3) Create a new conda environmnet with the necessary CUDA tools.
+	
+	conda create -n tf_gpu_A100 python=${PYTHON_VER} cudatoolkit=${CUDA_TK_VER} pandas cudnn -c anaconda -c conda-forge -c nvidia -y
+
+(4) Activate Environment:
+	
+	conda activate tf_gpu_A100
+
+(5) Install TensorFlow:
+	Install TensorFlow with GPU support and the relevant NVIDIA libraries, followed by PyTorch:
+	python3 -m pip install -U tensorflow[and-cuda]
+	pip3 install tensorrt tensorrt-bindings tensorrt-libs --extra-index-url https://pypi.nvidia.com # this might not be necessary
+	
+
+#test GPU installation
+ python -c "import tensorflow as tf; print('TensorFlow is using:', 'GPU' if tf.test.is_gpu_available(cuda_only=False, min_cuda_compute_capability=None) else 'CPU')"
+
