@@ -2,16 +2,15 @@
 ################### data processing for training ########################
 #########################################################################
 
-(1) Run for each epoch for odd and even number chromosomes separately
+(1) Run for each epoch for all chromosomes
     In GenerateTrainingData.py define the sample and sub-sample size(e.g. 150), window size and sliding window jump.
     Also define directory of data for each epoch (e.g path='/u/project/ngarud/Garud_lab/aDNA/epochH/VCF.v51.0.H.chr')
     Define outup file path as well as which chromosomes to process and haplotype sorting style.
 
-    qsub qsub_GenerateData
-
-    # I should use this code to generate training data from different epochs.
+    qsub qsub_GenerateData  # I should use this code to generate training data from different epochs.
+    
     # Example output file:
-        Tranining.H.odd.RowDist.n150.w201.j5.dat # only odd numberedchromosomes for training (then test on even numbered chromosomes)
+    Tranining.H.n150.w201.j5.dat 
 
 (2) Once I have generated the data files from all epochs, merge them together to use for training
 
@@ -28,10 +27,7 @@
 
 
 1) After processing simulations and data for training we are ready to train the DANN
-
-    We can train either a single channel DANN or two channel DANN
    
-
 
 2) Train model
 
