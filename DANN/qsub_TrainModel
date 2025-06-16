@@ -23,11 +23,17 @@ echo "Job $JOB_ID started on:   " `hostname -s`
 echo "Job $JOB_ID started on:   " `date `
 echo " "
 
+#set file paths
+model_name='GRL_multiclass'
+mmap_neutral = '../Data/sims/neutral_ConstantNeMD43_RowFreq_n150_w201_sims.npy' # neutral simulations
+mmap_HS = '../Data/sims/HS_ConstantNeMD43_RowFreq_n150_w201_sims.npy' # Hard sweep processed simulations
+mmap_SS = '../Data/sims/SS_ConstantNeMD43_RowFreq_n150_w201_sims.npy' # Soft sweeps processed simulations
+mmap_target = '../Data/aDNA/target_N-H_ALL_RowFreq_n150_w201.npy' # real processed aDNA data
 
 nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total --format=csv -l 60 > gpu_usage.log &
 
 #run code
-python -m cProfile -o output.prof  main_train.py
+python main_train.py model_name mmap_neutral mmap_HS mmap_SS mmap_target
 
 # echo job info on joblog:
 echo "Job $JOB_ID ended on:   " `hostname -s`
