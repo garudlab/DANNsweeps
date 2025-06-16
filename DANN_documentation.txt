@@ -46,23 +46,23 @@
 ########################################################################################################################
 
 for chr in {1..22};do
-    python ../addRecomb.py -i chr${chr}_CHBwithMD_pred_j10_10.txt -o chr${chr}_CHBwithMD_pred_j10_10_rec.txt -g "/u/project/ngarud/Garud_lab/aDNA/RecombMaps/DeCodeSexAveraged_GRCh37/genetic_map_decode_sex-averaged_chr${chr}.txt"
+    python ../addRecomb.py -i chr${chr}_BA_pred_j10_11.txt -o chr${chr}_BA_pred_j10_11_rec.txt -g "/u/project/ngarud/Garud_lab/aDNA/RecombMaps/DeCodeSexAveraged_GRCh37/genetic_map_decode_sex-averaged_chr${chr}.txt"
 done
 
 
 #add constant chrom number to file
 
 for chr in {1..22};do
-    awk -v num="$chr" '{print $0 "\t" num}' chr${chr}_CHBwithMD_pred_j10_10_rec.txt > chr${chr}_CHBwithMD_pred_j10_10_rec_tmp.txt
-    mv chr${chr}_CHBwithMD_pred_j10_10_rec_tmp.txt chr${chr}_CHBwithMD_pred_j10_10_rec.txt
+    awk -v num="$chr" '{print $0 "\t" num}' chr${chr}_BA_pred_j10_11_rec.txt > chr${chr}_BA_pred_j10_11_rec_tmp.txt
+    mv chr${chr}_BA_pred_j10_11_rec_tmp.txt chr${chr}_BA_pred_j10_11_rec.txt
 done
 
-cat chr*CHBwithMD*_rec.txt > scan_RowFreq_CHBwithMD_j10_10_rec.txt
+
+cat chr*BA*_rec.txt > scan_RowFreq_BA_j10_11_rec.txt
 
 for chr in {1..22};do
-    rm -f chr${chr}_CHBwithMD_pred_j10_10.txt
+    rm -f chr${chr}_BA_pred_j10_11.txt
 done
-
 
 ##### GET TOP PEAKS VCF AND ANNOTION
 
@@ -145,13 +145,17 @@ module load bcftools
 #Neutral
 #29970016-30630912
 
-bgzip -c  VCF.v40.3.EN.chr4.vcf >  VCF.v40.3.EN.chr4.vcf.gz
-tabix -p vcf  VCF.v40.3.EN.chr4.vcf.gz
+# 27550000 - 29000000 #HLA 
+# 28050000 - 28560000 # OCA2
+
+bgzip -c  VCF.v51.0.H.chr6.vcf >  VCF.v51.0.H.chr6.vcf.gz
+tabix -p vcf  VCF.v51.0.H.chr6.vcf.gz
 
 bcftools view -r 4:33679737-34856751  VCF.v40.3.EN.chr4.vcf.gz -o chr4.peakN.33679737-34856751.vcf
 
-bcftools view -r 6:27556692-28298012 VCF.v51.0.IA.chr6.vcf.gz -o chr6.peakIA.H12.HLA.vcf
+bcftools view -r 15:28050000-28560000 VCF.v51.0.H.chr15.vcf.gz -o chr15.peakH.OCA2.28050000-28560000.vcf
 
+#chr6 peak 6:27550000-29000000   bcftools view -H chr6.peakH.H12.HLA.27550000-29000000.vcf | wc -l # count num. variants
 
 qsub qsub_DataForViz #edit file path accordingly
 
@@ -348,7 +352,7 @@ zcat Selection_Summary_Statistics.tsv.gz | tail -n +24 | awk -F'\t' '$13 > 0.99'
 
 
 ### Merge all bed files with aDNA sweeps
-cat List_sweeps_Akbari_sorted.bed List_sweeps_Irving_sorted.bed List_sweeps_Kerner_sorted.bed List_sweeps_Mathieson_sorted.bed List_sweeps_PandeyHarris_sorted.bed > List_sweeps_ALL_aDNA.bed
+cat List_sweeps_Akbari_sorted.bed List_sweeps_Irving_sorted.bed List_sweeps_Kerner_sorted.bed List_sweeps_Mathieson_sorted.bed List_sweeps_PandeyHarris_sorted.bed List_sweeps_Le.bed > List_sweeps_ALL_aDNA.bed
 
 
 awk '{OFS="\t"; $2 -= 500000; $3 += 500000; print }' peaks_overlap_final.bed > peaks_overlap_final_plus500Kb.bed
@@ -365,5 +369,7 @@ bedtools intersect -v  -a peaks_overlap_final.bed -b /u/project/ngarud/Garud_lab
 
 bedtools intersect -v  -a peaks_overlap_final_plus1Mb.bed -b /u/project/ngarud/Garud_lab/aDNA/SweepsInLit/List_sweeps_ALL_aDNA_sorted.bed 
 
+bedtools intersect -v  -a peaks_overlap_final_plus1Mb.bed -b /u/project/ngarud/Garud_lab/aDNA/SweepsInLit/List_sweeps_ALL_aDNA_sorted.bed  | wc -l
 
 
+bedtools intersect -v  -a novel_sweeps.bed -b overlaps_with_Souilmi_1Mb.bed | wc -l #remove reamining overlap with souilmi

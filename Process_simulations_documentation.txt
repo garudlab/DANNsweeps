@@ -33,9 +33,9 @@ done
 
 for i in {1..50}; do
     #mv MD_Neutral_Souilmi_Q1_${i}.txt NeutralSouilmiMiss2MD05_THETA0.0_target0_${i}.txt
-    mv  MD_SoftSweep_Souilmi_Q1_${i}.txt  SoftSweepSouilmiTHETA5SelecLow_THETA5.0_target0_${i}.txt
+    #mv  MD_SoftSweep_Souilmi_Q1_${i}.txt  SoftSweepSouilmiTHETA5SelecLow_THETA5.0_target0_${i}.txt
     #mv  MD_HardSweep_Souilmi_Q1_${i}.txt  HardSweepSouilmiSelecLow_THETA0.01_target0_${i}.txt
-    #mv MD_SGV_ConstantNe_Q1_${i}.txt  SGVMD_THETA0.01_target0_${i}.txt
+    mv MD_SGV_ConstantNe_Q1_${i}.txt  SGVMD43_THETA0.01_target0_${i}.txt
 done
 
 for i in {1..50}; do
@@ -148,3 +148,4 @@ for i in {41..50}; do
     echo $i
     grep "segsites" Neutral_Souilmi_Q1_${i}.txt | wc -l
 done
+
