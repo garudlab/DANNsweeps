@@ -13,7 +13,7 @@ we transformed the alleles into binary values such that the major allele was cod
 Once the simulations have been generated and processed and the real aDNA has been processed we are ready to train the DANN.
 To train the model we submit the job **qsub_TrainModel**, which is running the script **main_train.py**.
 
-To run this script we have to define the following:
+To run this script we have to define the following within the **qsub_TrainModel** script:
 * **Model name.** This is the model name we use for the optput (e.g _model_name='GRL_multiclass'_).
 
   During training we will generate n+1 files where n= number of training epochs. The file _GRL_multiclass_model.json_ contains the model architechture and the remaining n files (_GRL_multiclass.1.weights.h5,GRL_multiclass.2.weights.h5,...GRL_multiclass.n.weights.h5_) contain the weights after each epoch of training.
@@ -22,6 +22,12 @@ To run this script we have to define the following:
   - mmap_HS = '/u/project/ngarud/Garud_lab/DANN/aDNA/ProcessingData/NPYprocessedfilesALLSnps/HS_ConstantNeMD43_RowFreq_n150_w201_sims.npy' # Hard sweep processed simulations
   - mmap_SS = '/u/project/ngarud/Garud_lab/DANN/aDNA/ProcessingData/NPYprocessedfilesALLSnps/SS_ConstantNeMD43_RowFreq_n150_w201_sims.npy'# Soft sweeps processed simulations
   - mmap_target = '/u/project/ngarud/Garud_lab/aDNA/TrainingData/target_N-H_ALL_RowFreq_n150_w201.npy' # real processed aDNA data
+
+To submit the job run: 
+```bash
+qsub qsub_TrainModel
+```
+Or run directly using
 
 ```bash
 python main_train.py model_name mmap_neutral mmap_HS mmap_SS mmap_target
