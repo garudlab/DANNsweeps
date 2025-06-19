@@ -18,10 +18,10 @@ To run this script we have to define the following:
 
   During training we will generate n+1 files where n= number of training epochs. The file _GRL_multiclass_model.json_ contains the model architechture and the remaining n files (_GRL_multiclass.1.weights.h5,GRL_multiclass.2.weights.h5,...GRL_multiclass.n.weights.h5_) contain the weights after each epoch of training.
 * **path to training data.** We define four separate paths to our training data:
-  - mmap_neutral = '../Data/sims/neutral_ConstantNeMD43_RowFreq_n150_w201_sims.npy' # neutral simulations
-  - mmap_HS = '../Data/sims/HS_ConstantNeMD43_RowFreq_n150_w201_sims.npy' # Hard sweep processed simulations
-  - mmap_SS = '../Data/sims/SS_ConstantNeMD43_RowFreq_n150_w201_sims.npy' # Soft sweeps processed simulations
-  - mmap_target = '../Data/aDNA/target_N-H_ALL_RowFreq_n150_w201.npy' # real processed aDNA data
+  - mmap_neutral = '/u/project/ngarud/Garud_lab/DANN/aDNA/ProcessingData/NPYprocessedfilesALLSnps/neutral_ConstantNeMD43_RowFreq_n150_w201_sims.npy' # neutral simulations
+  - mmap_HS = '/u/project/ngarud/Garud_lab/DANN/aDNA/ProcessingData/NPYprocessedfilesALLSnps/HS_ConstantNeMD43_RowFreq_n150_w201_sims.npy' # Hard sweep processed simulations
+  - mmap_SS = '/u/project/ngarud/Garud_lab/DANN/aDNA/ProcessingData/NPYprocessedfilesALLSnps/SS_ConstantNeMD43_RowFreq_n150_w201_sims.npy'# Soft sweeps processed simulations
+  - mmap_target = '/u/project/ngarud/Garud_lab/aDNA/TrainingData/target_N-H_ALL_RowFreq_n150_w201.npy' # real processed aDNA data
 
 ```bash
 python main_train.py model_name mmap_neutral mmap_HS mmap_SS mmap_target
