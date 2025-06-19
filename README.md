@@ -5,6 +5,13 @@ Code for manuscript: Harris M, Mo Z, Siepel A and Garud N. _Domain adaptation re
 ## 1) Set up
 To set up the Hoffman2 UCLA cluster for training the model on a A100 GPU node run steps in **install_tensorflowGPU_documentation**
 
+To install all requirements activate the conda environment and install requirements found in _requirements.txt_
+
+```bash
+ conda activate tf_gpu_A100
+ pip install -r requirements.txt
+```
+
 ## 2) Data
 All scripts to run simulations used for source domain and for simulation study are found in **slim scripts/** directory.
 
