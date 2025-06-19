@@ -32,12 +32,6 @@ mmap_SS = '/u/project/ngarud/Garud_lab/DANN/aDNA/ProcessingData/NPYprocessedfile
 mmap_target = '/u/project/ngarud/Garud_lab/aDNA/TrainingData/target_N-H_ALL_RowFreq_n150_w201.npy' # real processed aDNA data
 
 
-'''
-mmap_neutral = '../Data/sims/neutral_ConstantNeMD43_RowFreq_n150_w201_sims.npy' # neutral simulations
-mmap_HS = '../Data/sims/HS_ConstantNeMD43_RowFreq_n150_w201_sims.npy' # Hard sweep processed simulations
-mmap_SS = '../Data/sims/SS_ConstantNeMD43_RowFreq_n150_w201_sims.npy' # Soft sweeps processed simulations
-mmap_target = '../Data/aDNA/target_N-H_ALL_RowFreq_n150_w201.npy' # real processed aDNA data
-'''
 nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total --format=csv -l 60 > gpu_usage.log &
 
 #run code
