@@ -21,6 +21,9 @@ For each file that we process through **processData.py**  we get a .dat object g
 ```bash
 qsub qsub_DataForTraining #set correct virtual environment
 ```
+After sorting and merging all simulations we shoudl end up with three *.npy files one for neutral simulations, one for hard sweeps and one for soft sweeps. This is the input data that we will use as the source domain to train the classifier.
+
+To generate the aDNA target data used for training the discriminator follow the documentation in ../DataProcessing/ 
 
 # 2) Training DANN
 
