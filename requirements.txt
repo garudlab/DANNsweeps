@@ -1,7 +1,6 @@
 absl-py==1.4.0
 arviz==0.13.0
 astunparse==1.6.3
-Bottleneck @ file:///croot/bottleneck_1731058641041/work
 cachetools==5.5.0
 certifi==2024.8.30
 cftime==1.6.2
