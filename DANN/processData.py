@@ -19,7 +19,7 @@ for i in range(1,50+1):#
     path= "/u/scratch/m/mharrish/ConstantNe/"
     path_out ="/u/project/ngarud/Garud_lab/DANN/aDNA/ProcessingData/"
 
-    Neutral
+    #Neutral
     file_in=path + "Neutral/NeutralSouilmi_THETA0.0_target0_"+str(i)+".txt"
     file_out=path_out+"ProcessedDataALL/SortByRowFreq/Neutral/SouilmiMiss2MD43_Neutral_THETA1to5_n150_w201_RowFreq_trainsrc_"+str(i)+".dat"
     gene_sim = process_slim_files(path=file_in,num_samples=150,model_name="train",\
