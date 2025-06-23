@@ -1,0 +1,51 @@
+#!/bin/bash
+
+#$ -cwd
+# error = Merged with joblog
+#$ -o joblog.$JOB_ID
+#$ -j y
+## Edit the line below as needed:
+#$ -l h_rt=10:00:00,h_data=20G #,gpu,A100,gpu_mem=10G,cuda=1 #,gpu,RTX2080Ti,cuda=1    #RTX2080Ti V100  A100
+## Modify the parallel environment
+## and the number of cores as needed:
+#$ -pe shared 1
+# Notify when
+#$ -m a
+
+# load the job environment:
+. /u/local/Modules/default/init/modules.sh
+module load anaconda3
+conda activate base
+#conda activate keras_gpu_env 
+conda activate tf_gpu_A100
+
+
+# echo job info on joblog:
+echo "Job $JOB_ID started on:   " `hostname -s`
+echo "Job $JOB_ID started on:   " `date `
+echo " "
+
+model_name="GRL_multiclass"
+neutral_path ="/u/project/ngarud/Garud_lab/DANN/aDNA/ProcessingData/ProcessedDataALL/SortByRowFreq/Neutral/ConstantNeMD43_Neutral_THETA1to5_n150_w201_RowFreq_trainsrc_50.dat"
+HS_path = "/u/project/ngarud/Garud_lab/DANN/aDNA/ProcessingData/ProcessedDataALL/SortByRowFreq/HardSweeps/ConstantNeMD43_HS_THETA1to5_n150_w201_RowFreq_trainsrc_50.dat"
+SS_path = "/u/project/ngarud/Garud_lab/DANN/aDNA/ProcessingData/ProcessedDataALL/SortByRowFreq/SoftSweeps/ConstantNeMD43_SS_THETA1to5_n150_w201_RowFreq_trainsrc_50.dat"
+
+#run code
+for i in {1..9}; do
+	echo ${i}
+	cp ${model_name}_trained.0${i}.weights.h5 ${model_name}_trained.weights.h5
+	python Test_wSimulations_auprc.py ${i} ${model_name} ${neutral_path} ${HS_path} ${SS_path}
+done
+
+
+#do a nother for loop for 10 to 30
+for i in {10..30}; do
+       	echo ${i}
+       	cp ${model_name}_trained.${i}.weights.h5 G${model_name}_trained.weights.h5
+        python Test_wSimulations_auprc.py ${i} ${model_name} ${neutral_path} ${HS_path} ${SS_path}
+done
+
+# echo job info on joblog:
+echo "Job $JOB_ID ended on:   " `hostname -s`
+echo "Job $JOB_ID ended on:   " `date `
+echo " "

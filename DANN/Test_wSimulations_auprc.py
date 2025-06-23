@@ -26,14 +26,13 @@ def compute_precision_recall(y_true,y_pred,n_classes):
    return precision,recall,pr_auc
 
 
-def precision_recall2(class_labels,y_grl_pred,model_GRL,epoch):   #gene_sim_src_test
+def precision_recall(class_labels,y_grl_pred,model_GRL,epoch):   #gene_sim_src_test
 
     #get number of classes in data
     n_classes_src = 3+1
 
     #combine hard + soft
     combine_src_sweeps = np.logical_or(class_labels[:, 1],class_labels[:, 2]).astype(int).reshape(-1, 1)
-    #print(combine_src_sweeps)
     y_true_src=np.hstack([class_labels, combine_src_sweeps])
 
     #probabilities
@@ -49,13 +48,12 @@ def precision_recall2(class_labels,y_grl_pred,model_GRL,epoch):   #gene_sim_src_
     #output to file
     # Save to a text file
     with open('testing_auprc_results.txt', 'a') as f:
-        f.write(f"{epoch},{pr_auc_grl[0]:.2f},{pr_auc_grl[1]:.2f},{pr_auc_grl[2]:.2f},{pr_auc_grl[3]:.2f}\n")
+        f.write(f"{epoch},{pr_auc_grl[0]:.4f},{pr_auc_grl[1]:.4f},{pr_auc_grl[2]:.4f},{pr_auc_grl[3]:.4f}\n")
 
+    '''
     #PLOT PRC
     class_labels = ["Neutral", "Hard sweep", "Soft sweep","Sweeps"]
     colors_GRL = ["#BAB0AC", "#FF9D9A", "#A0CBE8","#D4A6C8"]
-    #path ="auprc.png"
-    #path =["auprc_neutral.png","auprc_HS.png","auprc_SS.png","auprc_sweep.png"]
     path ="auprc_"+str(epoch)+".png"
     plt.figure(figsize=(8, 6))
     for i in range(n_classes_src):
@@ -65,34 +63,32 @@ def precision_recall2(class_labels,y_grl_pred,model_GRL,epoch):   #gene_sim_src_
     plt.legend()
     plt.savefig(path)
     plt.close()
-
+    '''
 
 # -----------------------------------------------------------------------------------------------------------------------------------
 
 ## main
 
+### read epoch and file names
 epoch = sys.argv[1]
+model_name = str(sys.argv[2])
+data_trainsrc_neu_path = str(sys.argv[3])
+data_trainsrc_hs_path = str(sys.argv[4])
+data_trainsrc_ss_path = str(sys.argv[5])
 
-#Load test data 
-random_indices = np.random.choice(150, 99, replace=False)  # Select 99 unique indices
-random_indices.sort()
-
-#gene_sim_src_test = load_imagene(file='ProcessedImaGeneData/gene_ConstantNe_mutliclass_THETA1to5_n99_testsrc.dat');
-data_trainsrc_neu_path='../ProcessingData/ProcessedData/SortByRowFreq/Neutral/Souilmi_Neutral_THETA1to5_n150_w201_RowFreq_trainsrc_' #_1.dat'
-data_trainsrc_hs_path='../ProcessingData/ProcessedData/SortByRowFreq/HardSweeps/Souilmi_HS_THETA1to5_n150_w201_RowFreq_trainsrc_'
-data_trainsrc_ss_path='../ProcessingData/ProcessedData/SortByRowFreq/SoftSweeps/Souilmi_SS_THETA1to5_n150_w201_RowFreq_trainsrc_'
-
-gene_sim_neu_trainsrc = load_imagene(file=data_trainsrc_neu_path+str(50)+'.dat'); # I can add 49 and 50
-data_neu =gene_sim_neu_trainsrc.data.astype(np.float16) #[:,random_indices,:,:]
+##### Load test data ##########
+gene_sim_neu_trainsrc = load_imagene(file=data_trainsrc_neu_path); 
+data_neu =gene_sim_neu_trainsrc.data.astype(np.float16) 
 positions_neu = gene_sim_neu_trainsrc.positions
 # hard sweeps
-gene_sim_hs_trainsrc = load_imagene(file=data_trainsrc_hs_path+str(50)+'.dat');
-data_hs =gene_sim_hs_trainsrc.data.astype(np.float16) #[:,random_indices,:,:]
+gene_sim_hs_trainsrc = load_imagene(file=data_trainsrc_hs_path);
+data_hs =gene_sim_hs_trainsrc.data.astype(np.float16) 
 positions_hs = gene_sim_hs_trainsrc.positions
 # soft sweeps
-gene_sim_ss_trainsrc = load_imagene(file=data_trainsrc_ss_path+str(50)+'.dat');
-data_ss =gene_sim_ss_trainsrc.data.astype(np.float16) #[:,random_indices,:,:]
+gene_sim_ss_trainsrc = load_imagene(file=data_trainsrc_ss_path);
+data_ss =gene_sim_ss_trainsrc.data.astype(np.float16)
 positions_ss = gene_sim_ss_trainsrc.positions
+
 
 gene_sim_neu = ImaGene(data=data_neu, positions=positions_neu)
 gene_sim_hs = ImaGene(data=data_hs, positions=positions_hs)
@@ -109,18 +105,13 @@ gene_sim_ss.data[np.isnan(gene_sim_ss.data)] = 0
 
 
 gene_sim_src_test_data = np.concatenate((gene_sim_neu.data, gene_sim_hs.data,gene_sim_ss.data), axis=0) 
-#load models
 
-#CNN only
-#model_GRL=load_grl_model_lambdaScheduler('/u/project/ngarud/Garud_lab/DANN/aDNA/MultiClassData/Model_THETA5/GRL_multiclass_THETA5_gamma10_trained') 
-model_GRL=load_grl_model_lambdaScheduler('GRL_multiclass_THETAvary_trained')
+#load models
+model_GRL=load_grl_model_lambdaScheduler(model_name+'_trained')
 
 #Precision Recall
-#y_pred_matched = model_CNN.predict(gene_sim_src_test.data)
-#y_pred_missMatched = model_CNN.predict(gene_sim_tar_test.data)
 y_pred_grl= model_GRL.predict(gene_sim_src_test_data)
 
-#precision_recall(gene_sim_src_test,model_GRL) #remove model when I figure out branch names
 #labels
 neutral_label = np.array([1., 0., 0.])
 HS_label = np.array([0., 1., 0.])
@@ -134,6 +125,6 @@ ss_class_vstack = np.vstack([SS_label]*len(gene_sim_ss.data))
 
 class_labels = np.concatenate((neutral_class_vstack,hs_class_vstack,ss_class_vstack))
       
-precision_recall2(class_labels,y_pred_grl,model_GRL,epoch)  
+precision_recall(class_labels,y_pred_grl,model_GRL,epoch)  
 
 
