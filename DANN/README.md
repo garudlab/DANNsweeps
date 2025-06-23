@@ -33,7 +33,6 @@ To train the model we submit the job **qsub_TrainModel**, which is running the s
 To run this script we have to define the following within the **qsub_TrainModel** script:
 * **Model name.** This is the model name we use for the optput (e.g _model_name='GRL_multiclass'_).
 
-  During training we will generate n+1 files where n= number of training epochs. The file _GRL_multiclass_model.json_ contains the model architechture and the remaining n files (_GRL_multiclass.1.weights.h5,GRL_multiclass.2.weights.h5,...GRL_multiclass.n.weights.h5_) contain the weights after each epoch of training.
 * **path to training data.** We define four separate paths to our training data:
   - mmap_neutral = '/u/project/ngarud/Garud_lab/DANN/aDNA/ProcessingData/NPYprocessedfilesALLSnps/neutral_ConstantNeMD43_RowFreq_n150_w201_sims.npy' # neutral simulations
   - mmap_HS = '/u/project/ngarud/Garud_lab/DANN/aDNA/ProcessingData/NPYprocessedfilesALLSnps/HS_ConstantNeMD43_RowFreq_n150_w201_sims.npy' # Hard sweep processed simulations
@@ -51,4 +50,15 @@ python main_train.py model_name mmap_neutral mmap_HS mmap_SS mmap_target
 ```
 
   within the _main_train.py_ script you can adjust the batch size (set as 64 by default)
+
+  This script will generate n+2 files where n= number of training epochs:
+  - The file _GRL_multiclass_model.json_ contains the model architechture
+  -  _n=30_ files (_GRL_multiclass.1.weights.h5,GRL_multiclass.2.weights.h5,...GRL_multiclass.n.weights.h5_) contain the weights after each epoch of training.
+  -  The file _training_multiclass_results.txt_ with the target and source accuracies and losses for each epoch of training (30 epochs in this script, but this can be adjusted in the code).
+
+# 3) Choosing the model weights
+
+To choose the best training epoch weights for our model, we would usually choose the epoch with lowest validation accuracy in the target data. This is only possible when we know the labels for the target data, which is only the case when we're benchmarking with simulations. But in the real application, our target is unlabeled and hence, we don't have a validation set. In this scenario, we test on labeled data from the source domain. For the weights from each training epoch, we compute the area under the precision-recall curve (AUPRC) in a one-vs-rest approach (HS vs other classes, SS vs other classes and Neutral vs other classes). We then take the average of these three AUPRCs for each training epoch and choose the weights of the epoch with highest average AUPRC.
+
+The code 
 
