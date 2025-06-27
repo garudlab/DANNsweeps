@@ -36,7 +36,7 @@ mmap_HS_tar = '/u/project/ngarud/Garud_lab/DANN/aDNA/ProcessingData/NPYprocessed
 mmap_SS_tar = '/u/project/ngarud/Garud_lab/DANN/aDNA/ProcessingData/NPYprocessedfilesALLSnps/SS_SouilmiMD43_RowFreq_n150_w201_sims.npy'
 
 #run code
-python main_train.py mmap_neutral mmap_HS mmap_SS mmap_neutral_tar mmap_HS_tar mmap_SS_tar
+python main_train.py model_name mmap_neutral mmap_HS mmap_SS mmap_neutral_tar mmap_HS_tar mmap_SS_tar
 
 # echo job info on joblog:
 echo "Job $JOB_ID ended on:   " `hostname -s`

@@ -31,7 +31,7 @@ mmap_HS = '/u/project/ngarud/Garud_lab/DANN/aDNA/ProcessingData/NPYprocessedfile
 mmap_SS = '/u/project/ngarud/Garud_lab/DANN/aDNA/ProcessingData/NPYprocessedfilesALLSnps/SS_ConstantNeMD43_RowFreq_n150_w201_sims.npy' # Soft sweeps processed simulations
 
 #run code
-python main_train_CNN.py mmap_neutral mmap_HS mmap_SS
+python main_train_CNN.py model_name mmap_neutral mmap_HS mmap_SS
 
 # echo job info on joblog:
 echo "Job $JOB_ID ended on:   " `hostname -s`
