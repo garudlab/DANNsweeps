@@ -18,3 +18,5 @@ All scripts to run simulations used for source domain and for simulation study a
 ## 3) Training
 Code to train the DANN is found in the **DANN/** directory.
 
+Code to train the DANN and a CNN using simulated data only can be found in **DANN/DANN_simulations/** 
+
