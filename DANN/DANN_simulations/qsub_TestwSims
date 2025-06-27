@@ -1,0 +1,53 @@
+#!/bin/bash
+
+#$ -cwd
+# error = Merged with joblog
+#$ -o joblog.$JOB_ID
+#$ -j y
+## Edit the line below as needed:
+#$ -l h_rt=10:00:00,h_data=20G #,gpu,A100,gpu_mem=2G,cuda=1 #,gpu,RTX2080Ti,cuda=1    #RTX2080Ti V100  A100
+## Modify the parallel environment
+## and the number of cores as needed:
+#$ -pe shared 1
+# Notify when
+#$ -m a
+
+# load the job environment:
+. /u/local/Modules/default/init/modules.sh
+module load anaconda3
+conda activate base
+conda activate tf_gpu_A100
+
+
+# echo job info on joblog:
+echo "Job $JOB_ID started on:   " `hostname -s`
+echo "Job $JOB_ID started on:   " `date `
+echo " "
+
+## main
+
+model_name_CNN='CNN_multiclass'
+model_name_DANN='DANN_multiclass'
+
+
+path_src="/u/project/ngarud/Garud_lab/DANN/aDNA/ProcessingData/ProcessedDataALL/SortByRowFreq/"
+path_tar="/u/project/ngarud/Garud_lab/DANN/aDNA/ProcessingData/ProcessedDataALL/SortByRowFreq/"
+
+
+path_src_neu= path_src+"Neutral/ConstantNeMD43_Neutral_THETA1to5_n150_w201_RowFreq_trainsrc_50.dat"
+path_src_hs= path_src+"HardSweeps/ConstantNeMD43_HS_THETA1to5_n150_w201_RowFreq_trainsrc_50.dat"
+path_src_ss= path_src+"SoftSweeps/ConstantNeMD43_SS_THETA1to5_n150_w201_RowFreq_trainsrc_50.dat"
+
+path_tar_neu= path_tar+"Neutral/SouilmiMD43_Neutral_THETA1to5_n150_w201_RowFreq_trainsrc_50.dat" #SouilmiMD43
+path_tar_hs= path_src+"HardSweeps/SouilmiMD43_HS_THETA1to5_n150_w201_RowFreq_trainsrc_50.dat"
+path_tar_ss= path_src+"SoftSweeps/SouilmiMD43_HS_THETA1to5_n150_w201_RowFreq_trainsrc_50.dat"
+
+
+#run code
+#python Test_wSimulations.py
+python PR_curves_multiclass.py model_name_CNN model_name_DANN path_src_neu path_src_hs path_src_ss path_tar_neu path_tar_hs path_tar_ss
+
+# echo job info on joblog:
+echo "Job $JOB_ID ended on:   " `hostname -s`
+echo "Job $JOB_ID ended on:   " `date `
+echo " "
