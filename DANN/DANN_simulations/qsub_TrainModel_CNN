@@ -1,0 +1,39 @@
+#!/bin/bash
+
+#$ -cwd
+# error = Merged with joblog
+#$ -o joblog.$JOB_ID
+#$ -j y
+## Edit the line below as needed:
+#$ -l h_rt=20:00:00,h_data=50G,gpu,A100,gpu_mem=35G,cuda=1    #RTX2080Ti V100  A100 #100G 
+## Modify the parallel environment
+## and the number of cores as needed:
+#$ -pe shared 1
+# Notify when
+#$ -m a
+# load the job environment:
+. /u/local/Modules/default/init/modules.sh
+module load anaconda3
+conda activate base
+conda activate tf_gpu_A100
+
+
+# echo job info on joblog:
+echo "Job $JOB_ID started on:   " `hostname -s`
+echo "Job $JOB_ID started on:   " `date `
+echo " "
+
+#set file paths
+model_name='CNN_multiclass'
+
+mmap_neutral = '/u/project/ngarud/Garud_lab/DANN/aDNA/ProcessingData/NPYprocessedfilesALLSnps/neutral_ConstantNeMD43_RowFreq_n150_w201_sims.npy' # neutral simulations
+mmap_HS = '/u/project/ngarud/Garud_lab/DANN/aDNA/ProcessingData/NPYprocessedfilesALLSnps/HS_ConstantNeMD43_RowFreq_n150_w201_sims.npy' # Hard sweep processed simulations
+mmap_SS = '/u/project/ngarud/Garud_lab/DANN/aDNA/ProcessingData/NPYprocessedfilesALLSnps/SS_ConstantNeMD43_RowFreq_n150_w201_sims.npy' # Soft sweeps processed simulations
+
+#run code
+python main_train_CNN.py mmap_neutral mmap_HS mmap_SS
+
+# echo job info on joblog:
+echo "Job $JOB_ID ended on:   " `hostname -s`
+echo "Job $JOB_ID ended on:   " `date `
+echo " "
