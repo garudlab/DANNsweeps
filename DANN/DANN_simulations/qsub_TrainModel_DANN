@@ -1,0 +1,44 @@
+#!/bin/bash
+
+#$ -cwd
+# error = Merged with joblog
+#$ -o joblog.$JOB_ID
+#$ -j y
+## Edit the line below as needed:
+#$ -l h_rt=20:00:00,h_data=50G,gpu,A100,gpu_mem=35G,cuda=1    #RTX2080Ti V100  A100 #100G 
+## Modify the parallel environment
+## and the number of cores as needed:
+#$ -pe shared 1
+# Notify when
+#$ -m a
+# load the job environment:
+. /u/local/Modules/default/init/modules.sh
+module load anaconda3
+conda activate base
+conda activate tf_gpu_A100
+#conda activate keras_gpu_env
+
+# echo job info on joblog:
+echo "Job $JOB_ID started on:   " `hostname -s`
+echo "Job $JOB_ID started on:   " `date `
+echo " "
+
+model_name='DANN_multiclass'
+
+#source simulations
+mmap_neutral = '/u/project/ngarud/Garud_lab/DANN/aDNA/ProcessingData/NPYprocessedfilesALLSnps/neutral_ConstantNeMD43_RowFreq_n150_w201_sims.npy' # neutral simulations
+mmap_HS = '/u/project/ngarud/Garud_lab/DANN/aDNA/ProcessingData/NPYprocessedfilesALLSnps/HS_ConstantNeMD43_RowFreq_n150_w201_sims.npy' # Hard sweep processed simulations
+mmap_SS = '/u/project/ngarud/Garud_lab/DANN/aDNA/ProcessingData/NPYprocessedfilesALLSnps/SS_ConstantNeMD43_RowFreq_n150_w201_sims.npy' # Soft sweeps processed simulations
+
+# target simulations
+mmap_neutral_tar ='/u/project/ngarud/Garud_lab/DANN/aDNA/ProcessingData/NPYprocessedfilesALLSnps/neutral_SouilmiMD43_RowFreq_n150_w201_sims.npy'
+mmap_HS_tar = '/u/project/ngarud/Garud_lab/DANN/aDNA/ProcessingData/NPYprocessedfilesALLSnps/HS_SouilmiMD43_RowFreq_n150_w201_sims.npy'
+mmap_SS_tar = '/u/project/ngarud/Garud_lab/DANN/aDNA/ProcessingData/NPYprocessedfilesALLSnps/SS_SouilmiMD43_RowFreq_n150_w201_sims.npy'
+
+#run code
+python main_train.py mmap_neutral mmap_HS mmap_SS mmap_neutral_tar mmap_HS_tar mmap_SS_tar
+
+# echo job info on joblog:
+echo "Job $JOB_ID ended on:   " `hostname -s`
+echo "Job $JOB_ID ended on:   " `date `
+echo " "
