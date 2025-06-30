@@ -33,7 +33,7 @@ SS_path = "/u/project/ngarud/Garud_lab/DANN/aDNA/ProcessingData/ProcessedDataALL
 #run code
 for i in {1..9}; do
 	echo ${i}
-	cp ${model_name}_trained.0${i}.weights.h5 ${model_name}_trained.weights.h5
+	cp ${model_name}.0${i}.weights.h5 ${model_name}.weights.h5
 	python Test_wSimulations_auprc.py ${i} ${model_name} ${neutral_path} ${HS_path} ${SS_path}
 done
 
@@ -41,7 +41,7 @@ done
 #do a nother for loop for 10 to 30
 for i in {10..30}; do
        	echo ${i}
-       	cp ${model_name}_trained.${i}.weights.h5 G${model_name}_trained.weights.h5
+       	cp ${model_name}.${i}.weights.h5 ${model_name}.weights.h5
         python Test_wSimulations_auprc.py ${i} ${model_name} ${neutral_path} ${HS_path} ${SS_path}
 done
 
