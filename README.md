@@ -1,6 +1,6 @@
 # DANNsweeps
 
-Code for manuscript: Harris M, Mo Z, Siepel A and Garud N. _Domain adaptation reveals that hard sweeps were common in ancient humans_.
+Code for manuscript: Harris M, Mo Z, Siepel A and Garud N. _Persistence and loss of hard selective sweeps amid ancient human admixture_.
 
 ## 1) Set up
 To set up the Hoffman2 UCLA cluster for training the model on a A100 GPU node run steps in **install_tensorflowGPU_documentation**
