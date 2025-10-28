@@ -1,0 +1,42 @@
+#### submit_Admixture job####
+
+#!/bin/bash                         #-- what is the language of this shell
+
+#$ -cwd
+# error = Merged with joblog
+#$ -o joblog.$JOB_ID
+#$ -j y
+## Edit the line below as needed:
+#$ -l h_rt=20:00:00,h_data=5G
+## Modify the parallel environment
+## and the number of cores as needed:
+#$ -pe shared 1
+# Notify when
+#$ -m e
+
+
+# echo job info on joblog:
+echo "Job $JOB_ID started on:   " `hostname -s`
+echo "Job $JOB_ID started on:   " `date `
+echo " "
+
+# load the job environment:
+# load the job environment:
+. /u/local/Modules/default/init/modules.sh
+module load anaconda3
+
+path="/u/project/ngarud/Garud_lab/SLiM_simulations/SLiM4/aDNA/ConstantNe_sims/HardSweep/MSfiles/s0.005_0.1_FULLSNPs/*"
+
+for file in $path; do
+	filename="${file##*/}"
+	echo $filename
+	new_filename="MSfiles/MD_05perc_varyParams_s0.005_0.1_ALLSNPs_201/MD_$filename"
+	python processSims_aDNA_ALLSNPs.py $file $new_filename 201
+done	
+
+
+# echo job info on joblog:
+echo "Job $JOB_ID ended on:   " `hostname -s`
+echo "Job $JOB_ID ended on:   " `date `
+echo " "
+

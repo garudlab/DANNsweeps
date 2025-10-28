@@ -42,22 +42,22 @@
 ########################################################################################################################
 
 for chr in {1..22};do
-    python ../addRecomb.py -i chr${chr}_BA_pred_j10_11.txt -o chr${chr}_BA_pred_j10_11_rec.txt -g "/u/project/ngarud/Garud_lab/aDNA/RecombMaps/DeCodeSexAveraged_GRCh37/genetic_map_decode_sex-averaged_chr${chr}.txt"
+    python ../addRecomb.py -i chr${chr}_CEUnoMD_pred_j10_22.txt -o chr${chr}_CEUnoMD_pred_j10_22_rec.txt -g "/u/project/ngarud/Garud_lab/aDNA/RecombMaps/DeCodeSexAveraged_GRCh37/genetic_map_decode_sex-averaged_chr${chr}.txt"
 done
 
 
 #add constant chrom number to file
 
 for chr in {1..22};do
-    awk -v num="$chr" '{print $0 "\t" num}' chr${chr}_BA_pred_j10_11_rec.txt > chr${chr}_BA_pred_j10_11_rec_tmp.txt
-    mv chr${chr}_BA_pred_j10_11_rec_tmp.txt chr${chr}_BA_pred_j10_11_rec.txt
+    awk -v num="$chr" '{print $0 "\t" num}' chr${chr}_CEUnoMD_pred_j10_22_rec.txt > chr${chr}_CEUnoMD_pred_j10_22_rec_tmp.txt
+    mv chr${chr}_CEUnoMD_pred_j10_22_rec_tmp.txt chr${chr}_CEUnoMD_pred_j10_22_rec.txt
 done
 
 
-cat chr*BA*_rec.txt > scan_RowFreq_BA_j10_11_rec.txt
+cat chr*CEUnoMD*_rec.txt > scan_RowFreq_CEUnoMD_j10_22_rec.txt
 
 for chr in {1..22};do
-    rm -f chr${chr}_BA_pred_j10_11.txt
+    rm -f chr${chr}_CEUnoMD_pred_j10_22.txt
 done
 
 ##### GET TOP PEAKS VCF AND ANNOTION
@@ -144,7 +144,7 @@ module load bcftools
 # 27550000 - 29000000 #HLA 
 # 28050000 - 28560000 # OCA2
 
-bgzip -c  VCF.v51.0.H.chr6.vcf >  VCF.v51.0.H.chr6.vcf.gz
+bgzip -c  VCF.v40.3..chr6.vcf >  VCF.v51.0.H.chr6.vcf.gz
 tabix -p vcf  VCF.v51.0.H.chr6.vcf.gz
 
 bcftools view -r 4:33679737-34856751  VCF.v40.3.EN.chr4.vcf.gz -o chr4.peakN.33679737-34856751.vcf
